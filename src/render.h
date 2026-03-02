@@ -1,0 +1,79 @@
+#pragma once
+#include "SDL_gpu.h"
+#include <vector>
+#include "constants.h"
+
+struct Tile_Vertex {
+    SDL_FPoint pos;
+    int32_t gridX, gridY;
+    SDL_FColor col;
+    float faceID;  // 0 = Surface, 1 = Wall Left, 2 = Wall Right
+    SDL_FPoint uv;
+};
+
+struct Highlight_Vertex {
+    SDL_FPoint pos;
+    SDL_FPoint uv;
+    int32_t type;
+};
+
+struct UI_Vertex {
+    SDL_FPoint pos;
+    SDL_FPoint uv;
+    SDL_FColor tint;
+    int32_t textureX, textureY;
+    int32_t textureWidth, textureHeight;
+    int32_t highlightTextureX, highlightTextureY;
+    int32_t highlightTextureWidth, highlightTextureHeight;
+    int32_t state;
+};
+
+template<typename T>
+struct Geometry {
+    std::vector<T> vertices;
+    std::vector<int> indices;
+};
+
+struct Layer_Info {
+    Uint32 size;
+    Uint32 index;
+    Sint32 vertex;
+};
+
+extern SDL_GPUTexture* swapchainTexture;
+
+extern SDL_GPUGraphicsPipeline* highLightPipeline;
+extern SDL_GPUGraphicsPipeline* pipeline;
+extern SDL_GPUGraphicsPipeline* UIPipeline;
+
+SDL_GPUShader* loadShader(SDL_GPUDevice* device, const char* fileName, SDL_GPUShaderStage stage, Uint32 samplers = 0);
+void createPipeline(SDL_GPUDevice* renderer, SDL_Window* window);
+void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window);
+void createUIPipeline(SDL_GPUDevice* renderer, SDL_Window* window);
+
+extern SDL_GPUTexture* UISpriteSheet;
+extern SDL_GPUSampler* uiSampler;
+
+void loadUISpriteSheet(SDL_GPUDevice* renderer, const char* path);
+
+extern int UITextureMap[9][4];
+
+extern SDL_GPUBuffer* tileVBuf;
+extern SDL_GPUBuffer* tileIBuf;
+extern Layer_Info tileLayer[BOARD_WIDTH + BOARD_HEIGHT - 1];
+
+extern SDL_GPUBuffer* highlightVBuf;
+extern SDL_GPUBuffer* highlightIBuf;
+extern Layer_Info highlightLayer[BOARD_WIDTH + BOARD_HEIGHT - 1];
+
+extern SDL_GPUBuffer* unitVBuf;
+extern SDL_GPUBuffer* unitIBuf;
+extern Layer_Info unitLayer[BOARD_WIDTH + BOARD_HEIGHT - 1];
+
+extern SDL_GPUBuffer* UIVBuf;
+extern SDL_GPUBuffer* UIIBuf;
+extern int UIIndexSize;
+
+void render(SDL_GPUDevice* renderer, SDL_Window* window);
+SDL_GPUDevice* createRenderer(SDL_Window* window);
+void destroyRenderer(SDL_GPUDevice* renderer);
