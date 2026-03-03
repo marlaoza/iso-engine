@@ -31,9 +31,10 @@ class Unit {
         IsoObject body;
         SDL_Point targetPos;
         int selectedSkill;
-        std::vector<Skill> skills;
+        std::vector<Skill*> skills;
 
         Unit(char name[32], SDL_Point gridPos, int height, int width, int maxHp, int maxSpeed);
+        ~Unit();
 
         void select();
 
@@ -53,7 +54,6 @@ class Unit {
     private:
         std::vector<SDL_Point> reachMap;
         std::vector<SDL_Point> targetPool;
-        std::vector<EffectPreview> effectPreview;
         int poolIndex;
 
         void calculateReachMap(int size, int minSize = 0);

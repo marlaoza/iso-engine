@@ -11,6 +11,8 @@ Skill CreateMoveSkill() {
         2, 
         0,1, 
         0, 
+        false,
+        false,
         CostType::MovePoints,
         {{
             EffectTarget::Self,
@@ -19,7 +21,8 @@ Skill CreateMoveSkill() {
             SkillDependency::Speed,
             SkillDependency::Speed,
             1,
-            1
+            1,
+            {}
         }} 
     };
 }
@@ -35,6 +38,8 @@ Skill CreateSampleSkill() {
         2, 
         0,5, 
         0, 
+        true,
+        false,
         CostType::ActionPoints,
         {{
             EffectTarget::Unit,
@@ -43,7 +48,8 @@ Skill CreateSampleSkill() {
             SkillDependency::None,
             SkillDependency::None,
             4,
-            4
+            4,
+            {}
         }} 
     };
 }
@@ -58,6 +64,8 @@ Skill CreateSampleSkill2() {
         2, 
         0,5, 
         0, 
+        true,
+        false,
         CostType::ActionPoints,
         {{
             EffectTarget::Unit,
@@ -66,7 +74,8 @@ Skill CreateSampleSkill2() {
             SkillDependency::None,
             SkillDependency::None,
             4,
-            4
+            4,
+            {}
         }} 
     };
 }

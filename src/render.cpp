@@ -325,6 +325,8 @@ int UITextureMap[9][4] = {
     {0, 129, 192, 97} //selectedUnit
 };
 
+
+
 void render(SDL_GPUDevice* renderer, SDL_Window* window){
     if(renderer == NULL){return;}
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
@@ -424,8 +426,8 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     tileVBuf = SDL_CreateGPUBuffer(renderer, &vInfo);
     tileIBuf = SDL_CreateGPUBuffer(renderer, &iInfo);
 
-    size_t unitVertSize = MAX_UNITS * 12 * sizeof(Tile_Vertex);
-    size_t unitIndexSize = MAX_UNITS * 18 * sizeof(int);
+    size_t unitVertSize = MAX_UNITS * 4 * sizeof(Tile_Vertex);
+    size_t unitIndexSize = MAX_UNITS * 6 * sizeof(int);
     SDL_GPUBufferCreateInfo unitVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)unitVertSize };
     SDL_GPUBufferCreateInfo unitIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)unitIndexSize };
     unitVBuf = SDL_CreateGPUBuffer(renderer, &unitVInfo);

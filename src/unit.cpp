@@ -36,7 +36,16 @@ bool dirtyUnits = false;
     this->targetPool = {};
     this->poolIndex = 0;
 
-    this->skills.push_back(CreateSampleSkill2());
+    this->skills.push_back(new Skill(CreateSampleSkill2()));
+}
+
+Unit::~Unit() {
+    for (Skill* s : skills) {
+        delete s;
+    }
+    skills.clear();
+
+    unitMap[gridPos.y * BOARD_WIDTH + gridPos.x] = nullptr;
 }
 
 void Unit::select(){
@@ -51,26 +60,29 @@ void Unit::desselect(){
         for (SDL_Point p : this->reachMap){clearHighlight(p);}
         this->reachMap.clear();
         
-        for (EffectPreview ppp : this->effectPreview){
-            for(std::vector<SDL_Point> pp : ppp.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
-            for(SDL_Point p : ppp.affectedTiles){clearHighlight(p);}
+        for (Skill* s :  this->skills)
+        {
+            for(SkillEffect& e : s->effects){
+                for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
+                for(SDL_Point p : e.preview.affectedTiles){clearHighlight(p);}
+                e.preview.affectedTiles.clear();
+                e.preview.actionLines.clear();
+            }
         }
-        this->effectPreview.clear();
-
         SELECTED_UNIT = nullptr;
     }
 }
 
 void Unit::hoverSkill(int skillId){
     if(this->state == UnitState::Casting || this->state == UnitState::Moving) return;
-    Skill skill = this->skills[skillId];
+    Skill* skill = this->skills[skillId];
     
-    int range = this->getSkillDependentValue(skill.rangeDep, skill.baseRange);
+    int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);
 
-    this->calculateReachMap(range, skill.minRange);
+    this->calculateReachMap(range, skill->minRange);
     for (SDL_Point p : this->reachMap)
     {
-        addHighlight(p, skill.highlightPallete);
+        addHighlight(p, 1, skill->highlightPallete);
     }
     this->state = UnitState::Selecting;
         
@@ -87,14 +99,14 @@ void Unit::offHoverSkill(int skillId){
 
 void Unit::selectSkill(int skillId){
     if(this->state == UnitState::Casting || this->state == UnitState::Moving) return;
-    Skill skill = this->skills[skillId];
+    Skill* skill = this->skills[skillId];
 
-    int range = this->getSkillDependentValue(skill.rangeDep, skill.baseRange);    
+    int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);    
 
-    this->calculateReachMap(range, skill.minRange);
+    this->calculateReachMap(range, skill->minRange);
     for (SDL_Point p : this->reachMap)
     {
-        addHighlight(p, skill.highlightPallete);
+        addHighlight(p, 1, skill->highlightPallete);
     }
     this->state = UnitState::Casting;
     this->selectedSkill = skillId;
@@ -108,6 +120,7 @@ void Unit::setPath(std::vector<SDL_Point> path){
     this->targetPool = path;
     if(this->targetPool.size() > 0){
         this->targetPos = targetPool[0];
+        this->direction = getDirection(this->gridPos, this->targetPos);
         this->state = UnitState::Moving;
     }
 }
@@ -132,21 +145,23 @@ void Unit::calculatePreview(SDL_Point selectedTile){
         ||
         selectedSkill < 0 || selectedSkill > (skills.size()-1)
     ) {return;}
-    Skill s = this->skills[selectedSkill];
 
+    Skill* s = this->skills[selectedSkill];
 
-    for (EffectPreview ppp : this->effectPreview){
-        for(std::vector<SDL_Point> pp : ppp.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
-        for(SDL_Point p : ppp.affectedTiles){clearHighlight(p);}
+    for(SkillEffect& e : s->effects){
+        for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
+        for(SDL_Point p : e.preview.affectedTiles){clearHighlight(p);}
+        e.preview.affectedTiles.clear();
+        e.preview.actionLines.clear();
     }
-    this->effectPreview.clear();
-    for (SDL_Point p : this->reachMap){addHighlight(p, s.highlightPallete);}
 
-    if(s.origin == SkillOrigin::Self){
+    for (SDL_Point p : this->reachMap){addHighlight(p, 1, s->highlightPallete);}
+
+    if(s->origin == SkillOrigin::Self){
         origin = this->gridPos;
     }
 
-    for (SkillEffect e : s.effects)
+    for (SkillEffect& e : s->effects)
     {
 
         EffectPreview currentEp;
@@ -173,7 +188,6 @@ void Unit::calculatePreview(SDL_Point selectedTile){
                     origin = this->gridPos;
                 }
                 Direction pushDir = getDirection(pTarget->gridPos, origin);
-                printf("%d", pushDir);
                 actionLine = getLine(pTarget->gridPos, pushDir, range2, 0, true);
             }
 
@@ -181,26 +195,24 @@ void Unit::calculatePreview(SDL_Point selectedTile){
 
         }
 
-        this->effectPreview.push_back(currentEp);
+        e.preview = currentEp;
+        for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){addHighlight(p, 2, s->highlightPallete);}}
+        for(SDL_Point p : e.preview.affectedTiles){addHighlight(p, 3, s->highlightPallete);}
     }
 
-    for (EffectPreview ppp : this->effectPreview){
-        for(std::vector<SDL_Point> pp : ppp.actionLines){for(SDL_Point p : pp){addHighlight(p, s.highlightPallete + 1);}}
-        for(SDL_Point p : ppp.affectedTiles){addHighlight(p, s.highlightPallete + 2);}
-    }
+    
 }
 
 void Unit::castSkill(int skillId){
     if(this->state == UnitState::Casting){
         if(selectedSkill < 0 || selectedSkill > (skills.size()-1)) return;
-        Skill s = this->skills[selectedSkill];
+        Skill* s = this->skills[selectedSkill];
 
-        printf("%d | usou a skill %s",this->id, s.name);
+        printf("%d | usou a skill %s",this->id, s->name);
 
-        int i = 0;
-        for (SkillEffect e : s.effects)
+        for (SkillEffect& e : s->effects)
         {
-            EffectPreview ep = this->effectPreview[i];
+            EffectPreview ep = e.preview;
 
             int j = 0;
             for (SDL_Point p : ep.affectedTiles)
@@ -222,15 +234,14 @@ void Unit::castSkill(int skillId){
                 }
                 j++;
             }
+
+            for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
+            for(SDL_Point p : e.preview.affectedTiles){clearHighlight(p);}
+            e.preview.affectedTiles.clear();
+            e.preview.actionLines.clear();
             
-            i++;
         }
 
-        for (EffectPreview ppp : this->effectPreview){
-            for(std::vector<SDL_Point> pp : ppp.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
-            for(SDL_Point p : ppp.affectedTiles){clearHighlight(p);}
-        }
-        this->effectPreview.clear();
         for (SDL_Point p : this->reachMap){clearHighlight(p);}
 
         if(this->state != UnitState::Moving){
@@ -255,6 +266,7 @@ void Unit::move(){
         this->poolIndex ++;
         if(this->poolIndex < this->targetPool.size()){
             this->targetPos = this->targetPool[this->poolIndex];
+            this->direction = getDirection(this->gridPos, this->targetPos);
         }else{
             this->state = UnitState::Idle;
             this->targetPos = {-1,-1};
@@ -363,28 +375,15 @@ void calculateUnitPoints(SDL_GPUDevice* renderer){
         int dif = TILE_SIZE - u->width;
         SDL_FPoint tileOrigin = tiles[u->gridPos.y*BOARD_WIDTH + u->gridPos.x].tile.surface[0];
         SDL_FPoint tl = {tileOrigin.x + u->gridOffset.x, tileOrigin.y + u->gridOffset.y};
-        SDL_FPoint tr = {tl.x + TILE_SIZE + 1, tl.y + (TILE_SIZE/2)};
-        SDL_FPoint bl = {tl.x - TILE_SIZE, tl.y + TILE_SIZE/2};
-        SDL_FPoint br = {tl.x + 1,  tl.y + TILE_SIZE};
-        SDL_FPoint ptl = {tl.x, tl.y + dif/2};
-        SDL_FPoint ptr = {tr.x - dif, tr.y};
-        SDL_FPoint pbl = {bl.x + dif, bl.y};
-        SDL_FPoint pbr = {br.x, br.y - dif/2};
-        SDL_FPoint points_p[4] = {
-            {ptl.x, ptl.y - u->height},
-            {ptr.x, ptr.y - u->height},
-            {pbl.x, pbl.y - u->height},
-            {pbr.x, pbr.y - u->height}
-        };
         
-        SDL_FPoint points_pw[6] = {
-            {ptr.x, ptr.y - u->height},
-            {pbr.x, pbr.y - u->height},
-            {pbl.x, pbl.y - u->height},
-            {ptr.x, ptr.y},
-            {pbr.x, pbr.y},
-            {pbl.x, pbl.y}
+        SDL_FPoint ptr = {tl.x, tl.y + dif};
+        SDL_FPoint points_p[4] = {
+            {ptr.x - u->width, ptr.y - u->height},
+            {ptr.x + u->width, ptr.y - u->height},
+            {ptr.x - u->width, ptr.y},
+            {ptr.x + u->width, ptr.y},
         };
+   
 
         int index = u->gridPos.x + u->gridPos.y;
         int indexSum = 0;
@@ -400,32 +399,8 @@ void calculateUnitPoints(SDL_GPUDevice* renderer){
             if(index < 0) index = 0;
         }
 
-        unitGeometry[index].vertices.push_back({points_pw[0], u->gridPos.x, u->gridPos.y, RED, 1.0f, {0.0f, 0.0f}});
-        unitGeometry[index].vertices.push_back({points_pw[1], u->gridPos.x, u->gridPos.y, RED, 1.0f, {1.0f, 0.0f}});
-        unitGeometry[index].vertices.push_back({points_pw[3], u->gridPos.x, u->gridPos.y, RED, 1.0f, {0.0f, 1.0f}});
-        unitGeometry[index].vertices.push_back({points_pw[4], u->gridPos.x, u->gridPos.y, RED, 1.0f, {1.0f, 1.0f}});
-
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 0);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 1);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 2);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 1);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 2);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 3);
-        vertexOffset[index] += 4;
-            
-        unitGeometry[index].vertices.push_back({points_pw[1], u->gridPos.x, u->gridPos.y, RED, 2.0f, {0.0f, 0.0f}});
-        unitGeometry[index].vertices.push_back({points_pw[2], u->gridPos.x, u->gridPos.y, RED, 2.0f, {1.0f, 0.0f}});
-        unitGeometry[index].vertices.push_back({points_pw[4], u->gridPos.x, u->gridPos.y, RED, 2.0f, {0.0f, 1.0f}});
-        unitGeometry[index].vertices.push_back({points_pw[5], u->gridPos.x, u->gridPos.y, RED, 2.0f, {1.0f, 1.0f}});
-
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 0);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 1);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 2);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 1);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 2);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 3);
-        vertexOffset[index] += 4;
-
+        
+      
         unitGeometry[index].vertices.push_back({points_p[0], u->gridPos.x, u->gridPos.y, RED, 0.0f, {0.0f, 0.0f}});
         unitGeometry[index].vertices.push_back({points_p[1], u->gridPos.x, u->gridPos.y, RED, 0.0f, {1.0f, 0.0f}});
         unitGeometry[index].vertices.push_back({points_p[2], u->gridPos.x, u->gridPos.y, RED, 0.0f, {0.0f, 1.0f}});

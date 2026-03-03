@@ -86,7 +86,7 @@ void sortHighlight(SDL_GPUDevice* renderer){
     SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
     dirtyHighlights = false;
 }
-void addHighlight(SDL_Point p, int type){
+void addHighlight(SDL_Point p, int type, int pallete){
     if(p.x >= 0 && p.x < BOARD_WIDTH && p.y >= 0 && p.y < BOARD_HEIGHT){
         highlightMap[p.y * BOARD_WIDTH + p.x] = type;
         dirtyHighlights = true;

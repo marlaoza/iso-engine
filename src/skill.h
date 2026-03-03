@@ -23,6 +23,11 @@ enum class SkillDependency {
     Strength
 };
 
+struct EffectPreview {
+    std::vector<SDL_Point> affectedTiles; 
+    std::vector<std::vector<SDL_Point>> actionLines; 
+};
+
 struct SkillEffect {
     EffectTarget target;
     Shape shape;
@@ -31,12 +36,10 @@ struct SkillEffect {
     SkillDependency radiusDep;
     int basePower;
     int baseRadius;
+    EffectPreview preview;
 };
 
-struct EffectPreview {
-    std::vector<SDL_Point> affectedTiles; 
-    std::vector<std::vector<SDL_Point>> actionLines; 
-};
+
 
 enum class CostType {
     MovePoints,
@@ -58,6 +61,8 @@ struct Skill {
     int highlightPallete;
     int minRange; int baseRange;
     int cost;
+    bool reusable;
+    bool used;
     CostType costType;
     std::vector<SkillEffect> effects;
 };
