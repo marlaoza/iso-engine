@@ -81,8 +81,8 @@ void createPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     attributes[4].offset = (sizeof(float) * 7) + (sizeof(int)*2);
 
 
-    pipelineInfo.vertex_shader = loadShader(renderer, "vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
-    pipelineInfo.fragment_shader = loadShader(renderer, "fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 0);
+    pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/tile/vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
+    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/tile/fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 0);
 
     pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
     pipelineInfo.vertex_input_state.vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[]){{
@@ -137,8 +137,8 @@ void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     attributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
     attributes[2].offset = (sizeof(float) * 4);
 
-    pipelineInfo.vertex_shader = loadShader(renderer, "HL_vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
-    pipelineInfo.fragment_shader = loadShader(renderer, "HL_fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 0);
+    pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/highlight/HL_vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
+    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/highlight/HL_fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 0);
 
     pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
     pipelineInfo.vertex_input_state.vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[]){{
@@ -220,8 +220,8 @@ void createUIPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
 
 
 
-    pipelineInfo.vertex_shader = loadShader(renderer, "UI_vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
-    pipelineInfo.fragment_shader = loadShader(renderer, "UI_fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
+    pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/ui/UI_vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
+    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/ui/UI_fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
 
     pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
     pipelineInfo.vertex_input_state.vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[]){{
