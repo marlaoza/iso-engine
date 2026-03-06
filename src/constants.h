@@ -14,6 +14,7 @@
 
 #define BOARD_WIDTH 10
 #define BOARD_HEIGHT 20
+#define BOARD_DEPTH 10
 
 #define MAX_UNITS 30
 #define MAX_UI_ELEMENTS 30

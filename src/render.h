@@ -11,7 +11,7 @@ struct Tile_Vertex {
     SDL_FPoint uv;
 };
 
-struct Unit_Vertex {
+struct Entity_Vertex {
     SDL_FPoint pos;
     SDL_FPoint uv;
     int textureIndex;

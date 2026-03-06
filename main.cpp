@@ -65,6 +65,7 @@ UIElement* LTSelectedUi=  new UIElement({302, 288}, 14, 32,  false, -1, 6);
 UIElement* btnMove = new UIElement({105, 295}, 53, 27, true, 0, 0, 3);
 
 UIElement* btnPass = new UIElement({132, 296}, 29, 39, true, 0, 1, 4);
+UIElement* skillButtons[6];
 
 void findSelectedUIElement(){
     UIElement* LAST_ELEMENT = SELECTED_ELEMENT;
@@ -115,6 +116,28 @@ void createUnitUI(){
             SELECTED_UNIT->offHoverSkill(param);
         }
     };
+    float x = 170.0f;
+    for (int i = 0; i < 6; i++)
+    {
+        skillButtons[i] = new UIElement({x, 270}, 45, 40, true, i+1, 2);
+        skillButtons[i]->onClick = [](int param){
+            if(SELECTED_UNIT != nullptr){
+                SELECTED_UNIT->selectSkill(param);
+            }
+        };
+        skillButtons[i]->onHover = [](int param){
+            if(SELECTED_UNIT != nullptr){
+                SELECTED_UNIT->hoverSkill(param);
+            }
+        };
+        skillButtons[i]->offHover = [](int param){
+            if(SELECTED_UNIT != nullptr){
+                SELECTED_UNIT->offHoverSkill(param);
+            }
+        };
+        x+= 47.0f;
+    }
+    
 };
 
 void toggleUnitUI(SDL_GPUDevice* renderer){
@@ -123,13 +146,22 @@ void toggleUnitUI(SDL_GPUDevice* renderer){
         btnPass->setState(UIState::Hidden);
         FTSelectedUi->setState(UIState::Hidden);
         MTSelectedUi->setState(UIState::Hidden);
-        LTSelectedUi->setState(UIState::Hidden);       
+        LTSelectedUi->setState(UIState::Hidden);
+        for (int i = 0; i < 6; i++)
+        {
+            skillButtons[i]->setState(UIState::Hidden);
+        } 
     }else{
         btnMove->setState(UIState::Default);
         btnPass->setState(UIState::Default);
         FTSelectedUi->setState(UIState::Default);
         MTSelectedUi->setState(UIState::Default);
         LTSelectedUi->setState(UIState::Default);       
+        for (int i = 0; i < SELECTED_UNIT->skills.size()-1; i++)
+        {
+            skillButtons[i]->setState(UIState::Default);
+        } 
+        
 
     }
 }
@@ -226,8 +258,15 @@ int main(int argc, char *argv[]){
                     
                 }
                 if(windowEvent.button.button == SDL_BUTTON_RIGHT){
-                    if(SELECTED_UNIT){SELECTED_UNIT->desselect();toggleUnitUI(renderer);}
-                    if(!unitMap[SELECTED_TILE.y * BOARD_WIDTH + SELECTED_TILE.x]){
+                    if(SELECTED_UNIT){
+                        if(SELECTED_UNIT->state == UnitState::Casting || SELECTED_UNIT->state == UnitState::Selecting){
+                            SELECTED_UNIT->offHoverSkill(SELECTED_UNIT->selectedSkill);
+                            SELECTED_UNIT->selectedSkill = -1;
+                            SELECTED_UNIT->state = UnitState::Idle;
+                        }
+                        else SELECTED_UNIT->desselect();toggleUnitUI(renderer);
+                    }
+                    else if(!unitMap[SELECTED_TILE.y * BOARD_WIDTH + SELECTED_TILE.x]){
                         new Unit("carinha", SELECTED_TILE, 10, 3, 10, 3);
                     }
                     
@@ -246,10 +285,10 @@ int main(int argc, char *argv[]){
         {
             if(u->state == UnitState::Moving) u->move();
         }
-        if(dirtyUnits)calculateUnitPoints(renderer);
         if(dirtyMap)calculateTilePoints(renderer);
-        if(dirtyUi)updateElementBuffer(renderer);
         if(dirtyHighlights)sortHighlight(renderer);
+        if(dirtyUnits)calculateUnitPoints(renderer);
+        if(dirtyUi)updateElementBuffer(renderer);
         render(renderer, window);
     }
 

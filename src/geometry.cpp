@@ -132,7 +132,7 @@ std::vector<SDL_Point> getLine(SDL_Point origin, Direction direction, int maxSiz
         if (p.x < 0 || p.x >= BOARD_WIDTH || p.y < 0 || p.y >= BOARD_HEIGHT) continue;
         int pId = p.y * BOARD_WIDTH + p.x;
         if (tiles[pId].height - oHeight > 1) continue;
-        if(checkWalkability && unitMap[pId] != nullptr) continue;
+        if(checkWalkability && unitMap[pId] != nullptr) break;
         path.push_back(p);
         
     }

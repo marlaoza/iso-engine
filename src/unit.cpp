@@ -6,7 +6,6 @@
 #include <cmath>
 #include "enginedata.h"
 #include "map.h"
-#include <queue>
 #include <cstdio>
 #include "highlight.h"
 #include "skill.h"
@@ -36,7 +35,9 @@ bool dirtyUnits = false;
     this->targetPool = {};
     this->poolIndex = 0;
 
-    this->skills.push_back(new Skill(CreateSampleSkill2()));
+    this->skills.push_back(new Skill(CreateMoveSkill()));
+    this->skills.push_back(new Skill(CreateSampleSkill()));
+    this->skills.push_back(new Skill(CreateMoveSkill()));
 }
 
 Unit::~Unit() {
@@ -82,7 +83,7 @@ void Unit::hoverSkill(int skillId){
     this->calculateReachMap(range, skill->minRange);
     for (SDL_Point p : this->reachMap)
     {
-        addHighlight(p, 1, skill->highlightPallete);
+        addHighlight(p, 1+skill->highlightPallete, skill->highlightPallete);
     }
     this->state = UnitState::Selecting;
         
@@ -106,7 +107,7 @@ void Unit::selectSkill(int skillId){
     this->calculateReachMap(range, skill->minRange);
     for (SDL_Point p : this->reachMap)
     {
-        addHighlight(p, 1, skill->highlightPallete);
+        addHighlight(p, 1+skill->highlightPallete, skill->highlightPallete);
     }
     this->state = UnitState::Casting;
     this->selectedSkill = skillId;
@@ -155,7 +156,7 @@ void Unit::calculatePreview(SDL_Point selectedTile){
         e.preview.actionLines.clear();
     }
 
-    for (SDL_Point p : this->reachMap){addHighlight(p, 1, s->highlightPallete);}
+    for (SDL_Point p : this->reachMap){addHighlight(p, 1+s->highlightPallete, s->highlightPallete);}
 
     if(s->origin == SkillOrigin::Self){
         origin = this->gridPos;
@@ -196,8 +197,8 @@ void Unit::calculatePreview(SDL_Point selectedTile){
         }
 
         e.preview = currentEp;
-        for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){addHighlight(p, 2, s->highlightPallete);}}
-        for(SDL_Point p : e.preview.affectedTiles){addHighlight(p, 3, s->highlightPallete);}
+        for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){addHighlight(p, 2+s->highlightPallete, s->highlightPallete);}}
+        for(SDL_Point p : e.preview.affectedTiles){addHighlight(p, 3+s->highlightPallete, s->highlightPallete);}
     }
 
     
@@ -279,10 +280,6 @@ void Unit::move(){
     dirtyUnits = true;
 }
 
-int Unit::getId(){
-    return this->id;
-};
-
 void Unit::calculateReachMap(int size, int minSize){
     this->reachMap.clear();
     this->reachMap = getDiamond(this->gridPos, size, minSize);
@@ -302,13 +299,13 @@ Unit* HOVERED_UNIT;
 std::vector<Unit*> units;
 Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
-Geometry<Tile_Vertex> unitGeometry[BOARD_WIDTH + BOARD_HEIGHT - 1];
+Geometry<Entity_Vertex> unitGeometry[BOARD_WIDTH + BOARD_HEIGHT - 1];
 
 void sortUnits(SDL_GPUDevice* renderer){
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
 
-    size_t maxVerts = units.size() * 12 * sizeof(Tile_Vertex);
-    size_t maxInds = units.size() * 18 * sizeof(int);
+    size_t maxVerts = units.size() * 4 * sizeof(Entity_Vertex);
+    size_t maxInds = units.size() * 6 * sizeof(int);
     Uint32 totalSize = (Uint32)(maxVerts + maxInds);
 
     SDL_GPUTransferBufferCreateInfo tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)totalSize };
@@ -327,7 +324,7 @@ void sortUnits(SDL_GPUDevice* renderer){
         unitLayer[i].size = (Uint32)unitGeometry[i].indices.size();
         indexCount += unitLayer[i].size;
 
-        size_t vertSize = unitGeometry[i].vertices.size() * sizeof(Tile_Vertex);
+        size_t vertSize = unitGeometry[i].vertices.size() * sizeof(Entity_Vertex);
         size_t indexSize = unitGeometry[i].indices.size() * sizeof(int);
 
         unitLayer[i].vertex = (Sint32)vertexAmt;
@@ -372,16 +369,15 @@ void calculateUnitPoints(SDL_GPUDevice* renderer){
     { 
         Unit* u = units[i];
             
-        int dif = TILE_SIZE - u->width;
         SDL_FPoint tileOrigin = tiles[u->gridPos.y*BOARD_WIDTH + u->gridPos.x].tile.surface[0];
         SDL_FPoint tl = {tileOrigin.x + u->gridOffset.x, tileOrigin.y + u->gridOffset.y};
-        
-        SDL_FPoint ptr = {tl.x, tl.y + dif};
+ 
+        SDL_FPoint ptr = {tl.x, tl.y + (TILE_SIZE - u->width)};
         SDL_FPoint points_p[4] = {
             {ptr.x - u->width, ptr.y - u->height},
-            {ptr.x + u->width, ptr.y - u->height},
+            {ptr.x + u->width +1, ptr.y - u->height},
             {ptr.x - u->width, ptr.y},
-            {ptr.x + u->width, ptr.y},
+            {ptr.x + u->width +1, ptr.y},
         };
    
 
@@ -401,10 +397,10 @@ void calculateUnitPoints(SDL_GPUDevice* renderer){
 
         
       
-        unitGeometry[index].vertices.push_back({points_p[0], u->gridPos.x, u->gridPos.y, RED, 0.0f, {0.0f, 0.0f}});
-        unitGeometry[index].vertices.push_back({points_p[1], u->gridPos.x, u->gridPos.y, RED, 0.0f, {1.0f, 0.0f}});
-        unitGeometry[index].vertices.push_back({points_p[2], u->gridPos.x, u->gridPos.y, RED, 0.0f, {0.0f, 1.0f}});
-        unitGeometry[index].vertices.push_back({points_p[3], u->gridPos.x, u->gridPos.y, RED, 0.0f, {1.0f, 1.0f}});
+        unitGeometry[index].vertices.push_back({points_p[0], {0.0f, 0.0f}, 1});
+        unitGeometry[index].vertices.push_back({points_p[1], {1.0f, 0.0f}, 1});
+        unitGeometry[index].vertices.push_back({points_p[2], {0.0f, 1.0f}, 1});
+        unitGeometry[index].vertices.push_back({points_p[3], {1.0f, 1.0f}, 1});
 
         unitGeometry[index].indices.push_back(vertexOffset[index]);
         unitGeometry[index].indices.push_back(vertexOffset[index] + 1);

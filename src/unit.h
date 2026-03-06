@@ -28,7 +28,6 @@ class Unit {
         int shield;
         UnitState state;
         Direction direction;
-        IsoObject body;
         SDL_Point targetPos;
         int selectedSkill;
         std::vector<Skill*> skills;
@@ -48,7 +47,6 @@ class Unit {
 
         void setPath(std::vector<SDL_Point> path);
         void move();
-        int getId();
         void calculatePreview(SDL_Point target);
 
     private:
@@ -70,7 +68,7 @@ extern Unit* HOVERED_UNIT;
 extern std::vector<Unit*> units;
 extern Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
-extern Geometry<Tile_Vertex> unitGeometry[BOARD_WIDTH + BOARD_HEIGHT - 1];
+extern Geometry<Entity_Vertex> unitGeometry[BOARD_WIDTH + BOARD_HEIGHT - 1];
 
 void sortUnits(SDL_GPUDevice* renderer);
 
