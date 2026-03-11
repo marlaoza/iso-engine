@@ -8,6 +8,21 @@
 #include <iostream>
 
 SDL_GPUTexture* swapchainTexture;
+SDL_GPUTexture* depthTexture;
+
+void createDepthTexture(SDL_GPUDevice* device, int w, int h) {
+    SDL_GPUTextureCreateInfo dsInfo = {};
+    dsInfo.type = SDL_GPU_TEXTURETYPE_2D;
+    dsInfo.width = w;
+    dsInfo.height = h;
+    dsInfo.layer_count_or_depth = 1;
+    dsInfo.num_levels = 1;
+    dsInfo.format = SDL_GPU_TEXTUREFORMAT_D16_UNORM; 
+    dsInfo.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
+    
+    depthTexture = SDL_CreateGPUTexture(device, &dsInfo);
+}
+
 SDL_GPUGraphicsPipeline* highLightPipeline;
 SDL_GPUGraphicsPipeline* pipeline;
 SDL_GPUGraphicsPipeline* entityPipeline;
@@ -16,15 +31,15 @@ SDL_GPUGraphicsPipeline* UIPipeline;
 
 SDL_GPUBuffer* tileVBuf;
 SDL_GPUBuffer* tileIBuf;
-Layer_Info tileLayer[BOARD_WIDTH + BOARD_HEIGHT - 1];
+int tileIndexSize = 0;
 
 SDL_GPUBuffer* highlightVBuf;
 SDL_GPUBuffer* highlightIBuf;
-Layer_Info highlightLayer[BOARD_WIDTH + BOARD_HEIGHT - 1];
+int highLightIndexSize = 0;
 
 SDL_GPUBuffer* unitVBuf;
 SDL_GPUBuffer* unitIBuf;
-Layer_Info unitLayer[BOARD_WIDTH + BOARD_HEIGHT - 1];
+int unitIndexSize = 0;
 
 SDL_GPUBuffer* UIVBuf;
 SDL_GPUBuffer* UIIBuf;
@@ -112,6 +127,13 @@ void createPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
         }
     }};
 
+    pipelineInfo.depth_stencil_state.enable_depth_test = true;
+    pipelineInfo.depth_stencil_state.enable_depth_write = true;
+    pipelineInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS; 
+
+    pipelineInfo.target_info.has_depth_stencil_target = true;
+    pipelineInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
+
     pipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
     if (pipeline == NULL) {
         SDL_Log("Pipeline creation failed: %s", SDL_GetError());
@@ -121,7 +143,7 @@ void createPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
 void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
 
-    SDL_GPUVertexAttribute attributes[3];
+    SDL_GPUVertexAttribute attributes[4];
 
     attributes[0].location = 0;
     attributes[0].buffer_slot = 0;
@@ -138,6 +160,11 @@ void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     attributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
     attributes[2].offset = (sizeof(float) * 4);
 
+    attributes[3].location = 3;
+    attributes[3].buffer_slot = 0;
+    attributes[3].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;
+    attributes[3].offset = (sizeof(float) * 4) + sizeof(int);
+
     pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/highlight/vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
     pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/highlight/fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 0);
 
@@ -150,7 +177,7 @@ void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     }
     };
     pipelineInfo.vertex_input_state.vertex_attributes = attributes;
-    pipelineInfo.vertex_input_state.num_vertex_attributes = 3;
+    pipelineInfo.vertex_input_state.num_vertex_attributes = 4;
 
     pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 
@@ -168,16 +195,25 @@ void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
         }
     }};
 
+    pipelineInfo.depth_stencil_state.enable_depth_test = true;
+    pipelineInfo.depth_stencil_state.enable_depth_write = true;
+    pipelineInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS; 
+
+    pipelineInfo.target_info.has_depth_stencil_target = true;
+    pipelineInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
+
     highLightPipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
     if (highLightPipeline == NULL) {
         SDL_Log("Pipeline creation failed: %s", SDL_GetError());
     }
 
 }
+
+SDL_GPUTexture* unitTextureArray;
+SDL_GPUSampler* unitSampler;
 void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
-
-    SDL_GPUVertexAttribute attributes[3];
+    SDL_GPUVertexAttribute attributes[6];
 
     attributes[0].location = 0;
     attributes[0].buffer_slot = 0;
@@ -194,8 +230,23 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     attributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
     attributes[2].offset = sizeof(float) * 4;
 
+    attributes[3].location = 3;
+    attributes[3].buffer_slot = 0;
+    attributes[3].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
+    attributes[3].offset = sizeof(float) * 4 + sizeof(int);
+
+    attributes[4].location = 4;
+    attributes[4].buffer_slot = 0;
+    attributes[4].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
+    attributes[4].offset = sizeof(float) * 4 + sizeof(int) * 2;
+
+    attributes[5].location = 5;
+    attributes[5].buffer_slot = 0;
+    attributes[5].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;
+    attributes[5].offset = sizeof(float) * 4 + sizeof(int) * 3;
+
     pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/entity/vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
-    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/entity/fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 0);
+    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/entity/fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
 
     pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
     pipelineInfo.vertex_input_state.vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[]){{
@@ -206,7 +257,7 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     }
     };
     pipelineInfo.vertex_input_state.vertex_attributes = attributes;
-    pipelineInfo.vertex_input_state.num_vertex_attributes = 3;
+    pipelineInfo.vertex_input_state.num_vertex_attributes = 6;
 
     pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 
@@ -224,12 +275,79 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
         }
     }};
 
+    pipelineInfo.depth_stencil_state.enable_depth_test = true;
+    pipelineInfo.depth_stencil_state.enable_depth_write = true;
+    pipelineInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS; 
+
+    pipelineInfo.target_info.has_depth_stencil_target = true;
+    pipelineInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
+
+
     entityPipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
     if (entityPipeline == NULL) {
         SDL_Log("Pipeline creation failed: %s", SDL_GetError());
     }
 
+
+    SDL_GPUTextureCreateInfo texInfo = {};
+    texInfo.type = SDL_GPU_TEXTURETYPE_2D_ARRAY;
+    texInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+    texInfo.width = 144;
+    texInfo.height = 144;
+    texInfo.layer_count_or_depth = 10;
+    texInfo.num_levels = 1;
+    texInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
+
+    unitTextureArray = SDL_CreateGPUTexture(renderer, &texInfo);
+
+    SDL_GPUSamplerCreateInfo samplerInfo = {};
+    samplerInfo.min_filter = SDL_GPU_FILTER_NEAREST;
+    samplerInfo.mag_filter = SDL_GPU_FILTER_NEAREST;
+    samplerInfo.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    samplerInfo.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    unitSampler = SDL_CreateGPUSampler(renderer, &samplerInfo);
 }
+
+void loadUnitSheet(SDL_GPUDevice* renderer, const char* path, int slice){
+    int w, h, channels;
+    unsigned char* pixels = stbi_load(path, &w, &h, &channels, 4);
+    if(pixels == NULL){
+        SDL_Log("Failed to load UI spritesheet: %s", stbi_failure_reason());
+        return;
+    }
+
+    size_t pixelSize = w * h * 4;
+    SDL_GPUTransferBufferCreateInfo tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)pixelSize };
+    SDL_GPUTransferBuffer* tbuf = SDL_CreateGPUTransferBuffer(renderer, &tbufInfo);
+    void* mapPtr = SDL_MapGPUTransferBuffer(renderer, tbuf, false);
+    memcpy(mapPtr, pixels, pixelSize);
+    SDL_UnmapGPUTransferBuffer(renderer, tbuf);
+    stbi_image_free(pixels);
+
+    SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
+    SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
+
+    SDL_GPUTextureTransferInfo src = {};
+    src.transfer_buffer = tbuf;
+    src.offset = 0;
+    src.pixels_per_row = (Uint32)w;
+    src.rows_per_layer = (Uint32)h;
+
+    SDL_GPUTextureRegion dst = {};
+    dst.texture = unitTextureArray;
+    dst.layer = slice;
+    dst.w = (Uint32)w;
+    dst.h = (Uint32)h;
+    dst.d = 1;
+
+    SDL_UploadToGPUTexture(copyPass, &src, &dst, false);
+    SDL_EndGPUCopyPass(copyPass);
+    SDL_SubmitGPUCommandBuffer(cmd);
+    SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
+
+
+}
+
 void createUIPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
 
@@ -382,8 +500,6 @@ int UITextureMap[9][4] = {
     {0, 129, 192, 97} //selectedUnit
 };
 
-
-
 void render(SDL_GPUDevice* renderer, SDL_Window* window){
     if(renderer == NULL){return;}
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
@@ -392,7 +508,7 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
     Uint32 heigth = (Uint32)HEIGHT;
 
     if(SDL_WaitAndAcquireGPUSwapchainTexture(cmd, window, &swapchainTexture, &width, &heigth)){
-        SceneUniforms myData = { (float)WIDTH, (float)HEIGHT, MOUSE_POS.x, MOUSE_POS.y, CAM_POS.x, CAM_POS.y, CAM_ZOOM, 0, SELECTED_TILE.x, SELECTED_TILE.y, BOARD_HEIGHT + BOARD_WIDTH, 0 };
+        SceneUniforms myData = { (float)WIDTH, (float)HEIGHT, MOUSE_POS.x, MOUSE_POS.y, CAM_POS.x, CAM_POS.y, CAM_ZOOM, FRAME_TIME, SELECTED_TILE.x, SELECTED_TILE.y, BOARD_HEIGHT + BOARD_WIDTH, 0 };
 
         SDL_GPUColorTargetInfo colorTarget{};
         colorTarget.texture = swapchainTexture;
@@ -400,8 +516,16 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
         colorTarget.load_op = SDL_GPU_LOADOP_CLEAR;
         colorTarget.store_op = SDL_GPU_STOREOP_STORE;
 
+        SDL_GPUDepthStencilTargetInfo depthTarget = {};
+        depthTarget.texture = depthTexture;
+        depthTarget.clear_depth = 1.0f; 
+        depthTarget.load_op = SDL_GPU_LOADOP_CLEAR;
+        depthTarget.store_op = SDL_GPU_STOREOP_DONT_CARE; 
+        depthTarget.stencil_load_op = SDL_GPU_LOADOP_DONT_CARE;
+        depthTarget.stencil_store_op = SDL_GPU_STOREOP_DONT_CARE;
 
-        SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmd, &colorTarget, 1, NULL);
+
+        SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmd, &colorTarget, 1, &depthTarget);
         
         SDL_GPUBufferBinding tileVBinding = { .buffer = tileVBuf, .offset = 0 };
         SDL_GPUBufferBinding tileIBinding = { .buffer = tileIBuf, .offset = 0 };
@@ -418,39 +542,22 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
         
         SDL_BindGPUGraphicsPipeline(renderPass, pipeline); 
         SDL_PushGPUVertexUniformData(cmd, 0, &myData, sizeof(myData));
+        SDL_BindGPUVertexBuffers(renderPass, 0, &tileVBinding, 1);
+        SDL_BindGPUIndexBuffer(renderPass, &tileIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+        SDL_DrawGPUIndexedPrimitives(renderPass, tileIndexSize, 1, 0, 0, 0);
 
-        for (int i = 0; i < BOARD_HEIGHT + BOARD_WIDTH - 1; i++)
-        {
-            
-            SDL_BindGPUVertexBuffers(renderPass, 0, &tileVBinding, 1);
-            SDL_BindGPUIndexBuffer(renderPass, &tileIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-            SDL_DrawGPUIndexedPrimitives(renderPass, tileLayer[i].size, 1, tileLayer[i].index, tileLayer[i].vertex, 0);
+        SDL_BindGPUGraphicsPipeline(renderPass, highLightPipeline); 
+        SDL_BindGPUVertexBuffers(renderPass, 0, &highlightVBinding, 1);
+        SDL_BindGPUIndexBuffer(renderPass, &highlightIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+        SDL_DrawGPUIndexedPrimitives(renderPass, highLightIndexSize, 1, 0, 0, 0);
 
-            if(highlightLayer[i].size > 0){
-                SDL_BindGPUGraphicsPipeline(renderPass, highLightPipeline); 
-                SDL_PushGPUVertexUniformData(cmd, 0, &myData, sizeof(myData));
-                
-                SDL_BindGPUVertexBuffers(renderPass, 0, &highlightVBinding, 1);
-                SDL_BindGPUIndexBuffer(renderPass, &highlightIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-                SDL_DrawGPUIndexedPrimitives(renderPass, highlightLayer[i].size, 1, highlightLayer[i].index, highlightLayer[i].vertex, 0);
+        SDL_BindGPUGraphicsPipeline(renderPass, entityPipeline); 
+        SDL_GPUTextureSamplerBinding unitBinding = { .texture = unitTextureArray, .sampler = unitSampler };
+        SDL_BindGPUFragmentSamplers(renderPass, 0, &unitBinding, 1);
+        SDL_BindGPUVertexBuffers(renderPass, 0, &unitVBinding, 1);
+        SDL_BindGPUIndexBuffer(renderPass, &unitIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+        SDL_DrawGPUIndexedPrimitives(renderPass, unitIndexSize, 1, 0, 0, 0);
 
-            }
-
-            if(unitLayer[i].size > 0){
-                SDL_BindGPUGraphicsPipeline(renderPass, entityPipeline); 
-                SDL_PushGPUVertexUniformData(cmd, 0, &myData, sizeof(myData));
-
-                SDL_BindGPUVertexBuffers(renderPass, 0, &unitVBinding, 1);
-                SDL_BindGPUIndexBuffer(renderPass, &unitIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-                SDL_DrawGPUIndexedPrimitives(renderPass, unitLayer[i].size, 1, unitLayer[i].index, unitLayer[i].vertex, 0);
-            }
-
-            SDL_BindGPUGraphicsPipeline(renderPass, pipeline); 
-            SDL_PushGPUVertexUniformData(cmd, 0, &myData, sizeof(myData));
-           
-           
-        } 
-        
         SDL_EndGPURenderPass(renderPass);
 
         if(UISpriteSheet != NULL && uiSampler != NULL){
@@ -482,9 +589,12 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     SDL_ClaimWindowForGPUDevice(renderer, window);
     SDL_SetGPUSwapchainParameters(renderer, window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_MAILBOX);
 
+    createDepthTexture(renderer, WIDTH, HEIGHT);
     createPipeline(renderer, window);
     createHighLightPipeline(renderer,window);
     createEntityPipeline(renderer, window);
+    loadUnitSheet(renderer, "src/assets/unit_sprites/base_idle.png", 0);
+
     createUIPipeline(renderer, window);
 
     size_t vertSize = BOARD_HEIGHT*BOARD_WIDTH * 12 * sizeof(Tile_Vertex);
@@ -509,9 +619,9 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     unitIBuf = SDL_CreateGPUBuffer(renderer, &unitIInfo);
 
     size_t UIVertSize = MAX_UI_ELEMENTS * 4 * sizeof(UI_Vertex);
-    size_t UIIndexSize = MAX_UI_ELEMENTS * 6 * sizeof(int);
+    size_t UIBufferIndexSize = MAX_UI_ELEMENTS * 6 * sizeof(int);
     SDL_GPUBufferCreateInfo UIVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)UIVertSize };
-    SDL_GPUBufferCreateInfo UIIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)UIIndexSize };
+    SDL_GPUBufferCreateInfo UIIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)UIBufferIndexSize };
     UIVBuf = SDL_CreateGPUBuffer(renderer, &UIVInfo);
     UIIBuf = SDL_CreateGPUBuffer(renderer, &UIIInfo);
 

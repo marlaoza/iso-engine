@@ -68,8 +68,4 @@ extern Unit* HOVERED_UNIT;
 extern std::vector<Unit*> units;
 extern Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
-extern Geometry<Entity_Vertex> unitGeometry[BOARD_WIDTH + BOARD_HEIGHT - 1];
-
 void sortUnits(SDL_GPUDevice* renderer);
-
-void calculateUnitPoints(SDL_GPUDevice* renderer);

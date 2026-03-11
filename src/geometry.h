@@ -4,15 +4,15 @@
 #include <vector>
 
 enum class Direction {
-    Up,
     Down,
-    Right,
-    Left,
-
-    UpLeft,
-    UpRight,
     DownLeft,
-    DownRight
+    Left,
+    UpLeft,
+    Up,
+    UpRight,
+    Right,
+    DownRight,
+
 };
 
 enum class Shape {

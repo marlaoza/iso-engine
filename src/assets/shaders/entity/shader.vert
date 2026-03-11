@@ -7,23 +7,32 @@ cbuffer SceneData : register(b0) {
     float camX;
     float camY;
     float camZoom;
-    float padding0;
+    float frameTime;
     int selectedX;
     int selectedY;
     int mapSize;
-    int padding1;
+    int padding0;
 };
 
 struct VSInput {
     float2 pos : POSITION;
     float2 uv: TEXCOORD0;
     int texIndex: TEXCOORD1;
+    int direction: TEXCOORD2;
+    int state: TEXCOORD3;
+    int2 gridPos : TEXCOORD5;
+
+
 };
 
 struct VSOutput {
     float4 pos : SV_POSITION;
     float2 uv: TEXCOORD0;
     int texIndex: TEXCOORD1;
+    int direction: TEXCOORD2;
+    int state: TEXCOORD3;
+    int frame: TEXCOORD4;
+
 };
 
 VSOutput main(VSInput input) {
@@ -36,12 +45,17 @@ VSOutput main(VSInput input) {
     
     float2 p = (normPos - normCam) * camZoom;
 
+    float depth = ( (float)(input.gridPos.x + input.gridPos.y) / (float)mapSize ) + 0.005;
+
     output.pos = float4((p.x / resolution.x) * 2.0 - 1.0, 
                         (p.y / resolution.y) * -2.0 + 1.0, 
-                        1.0, 1.0);
+                        1.0 - depth, 1.0);
 
     output.texIndex = input.texIndex;
     output.uv = input.uv;
+    output.direction = input.direction;
+    output.state = input.state;
+    output.frame = frameTime % 3;
 
     return output;
 }

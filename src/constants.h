@@ -7,8 +7,8 @@
 #define CAM_SPEED_INCREMENT 100.0f
 #define CAM_MAX_SPEED 300.0f
 
-#define CAM_MAX_ZOOM 3.5f
-#define CAM_MIN_ZOOM 0.5f
+#define CAM_MAX_ZOOM 5.0f
+#define CAM_MIN_ZOOM 1.0f
 
 #define TILE_SIZE 10
 

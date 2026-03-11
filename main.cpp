@@ -44,12 +44,16 @@ void findSelectedTile(){
         }
             
     }
-    if( SELECTED_TILE.x > 0 
-        && SELECTED_TILE.y > 0
+    if( SELECTED_TILE.x >= 0 
+        && SELECTED_TILE.y >= 0
         && SELECTED_UNIT != nullptr
-        && SELECTED_UNIT->state == UnitState::Casting
         && (SELECTED_TILE.x != LAST_TILE.x || SELECTED_TILE.y != LAST_TILE.y)) {
-        SELECTED_UNIT->calculatePreview(SELECTED_TILE);
+        if(SELECTED_UNIT->state == UnitState::Casting) SELECTED_UNIT->calculatePreview(SELECTED_TILE);
+        
+        if(SELECTED_UNIT->state != UnitState::Moving){
+            SELECTED_UNIT->direction = getDirection(SELECTED_UNIT->gridPos, SELECTED_TILE);
+            dirtyUnits = true;
+        }
     }
 
 
@@ -61,7 +65,7 @@ UIElement* SELECTED_ELEMENT;
 
 UIElement* FTSelectedUi = new UIElement({10, 250} , 192, 97, false, -1, 7);
 UIElement* MTSelectedUi = new UIElement({202, 288}, 100, 32, false, -1, 5);
-UIElement* LTSelectedUi=  new UIElement({302, 288}, 14, 32,  false, -1, 6);
+UIElement* LTSelectedUi = new UIElement({302, 288}, 14, 32,  false, -1, 6);
 UIElement* btnMove = new UIElement({105, 295}, 53, 27, true, 0, 0, 3);
 
 UIElement* btnPass = new UIElement({132, 296}, 29, 39, true, 0, 1, 4);
@@ -217,7 +221,7 @@ int main(int argc, char *argv[]){
     createUnitUI();
     toggleUnitUI(renderer);
 
-    calculateTilePoints(renderer);
+    sortTilePoints(renderer);
 
     SDL_Event windowEvent;
     while(true){
@@ -267,7 +271,7 @@ int main(int argc, char *argv[]){
                         else SELECTED_UNIT->desselect();toggleUnitUI(renderer);
                     }
                     else if(!unitMap[SELECTED_TILE.y * BOARD_WIDTH + SELECTED_TILE.x]){
-                        new Unit("carinha", SELECTED_TILE, 10, 3, 10, 3);
+                        new Unit("carinha", SELECTED_TILE, 28, 5, 10, 3);
                     }
                     
                 }
@@ -285,9 +289,9 @@ int main(int argc, char *argv[]){
         {
             if(u->state == UnitState::Moving) u->move();
         }
-        if(dirtyMap)calculateTilePoints(renderer);
+        if(dirtyMap)sortTilePoints(renderer);
         if(dirtyHighlights)sortHighlight(renderer);
-        if(dirtyUnits)calculateUnitPoints(renderer);
+        if(dirtyUnits)sortUnits(renderer);
         if(dirtyUi)updateElementBuffer(renderer);
         render(renderer, window);
     }

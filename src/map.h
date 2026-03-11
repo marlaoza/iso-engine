@@ -15,8 +15,4 @@ extern MapInfo map[BOARD_WIDTH][BOARD_HEIGHT];
 
 extern bool dirtyMap;
 
-extern Geometry<Tile_Vertex> layeredGeometry[BOARD_WIDTH + BOARD_HEIGHT - 1];
-
 void sortTilePoints(SDL_GPUDevice* renderer);
-
-void calculateTilePoints(SDL_GPUDevice* renderer);

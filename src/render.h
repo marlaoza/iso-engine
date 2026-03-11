@@ -15,12 +15,16 @@ struct Entity_Vertex {
     SDL_FPoint pos;
     SDL_FPoint uv;
     int textureIndex;
+    int direction;
+    int state;
+    int32_t gridX, gridY;
 };
 
 struct Highlight_Vertex {
     SDL_FPoint pos;
     SDL_FPoint uv;
     int32_t type;
+    int32_t gridX, gridY;
 };
 
 struct UI_Vertex {
@@ -66,15 +70,15 @@ extern int UITextureMap[9][4];
 
 extern SDL_GPUBuffer* tileVBuf;
 extern SDL_GPUBuffer* tileIBuf;
-extern Layer_Info tileLayer[BOARD_WIDTH + BOARD_HEIGHT - 1];
+extern int tileIndexSize;
 
 extern SDL_GPUBuffer* highlightVBuf;
 extern SDL_GPUBuffer* highlightIBuf;
-extern Layer_Info highlightLayer[BOARD_WIDTH + BOARD_HEIGHT - 1];
+extern int highLightIndexSize;
 
 extern SDL_GPUBuffer* unitVBuf;
 extern SDL_GPUBuffer* unitIBuf;
-extern Layer_Info unitLayer[BOARD_WIDTH + BOARD_HEIGHT - 1];
+extern int unitIndexSize;
 
 extern SDL_GPUBuffer* UIVBuf;
 extern SDL_GPUBuffer* UIIBuf;

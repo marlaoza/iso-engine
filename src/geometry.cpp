@@ -241,14 +241,13 @@ bool pointInPolygon(SDL_FPoint point, int indices[], int n_triangules, const SDL
         SDL_FPoint a = vertices[indices[0 + (i*3)]];
         SDL_FPoint b = vertices[indices[1 + (i*3)]];
         SDL_FPoint c = vertices[indices[2 + (i*3)]];
-
+        
         float area = 0.5f *(-b.y*c.x + a.y*(-b.x + c.x) + a.x*(b.y - c.y) + b.x*c.y);
 
         float s = 1.0f/(2.0f*area)*(a.y*c.x - a.x*c.y + (c.y - a.y)*point.x + (a.x - c.x)*point.y);
         float t = 1.0f/(2.0f*area)*(a.x*b.y - a.y*b.x + (a.y - b.y)*point.x + (b.x - a.x)*point.y);
 
         if(s >= 0 && t >=0 && (s + t) <= 1){return true;}
-        
     }
     
     return false;
@@ -258,42 +257,43 @@ Direction getDirection(SDL_Point a, SDL_Point b){
     Direction direction = Direction::Left;
     SDL_Point directionPoint = {a.x - b.x, a.y - b.y};
 
-    if(directionPoint.x == 1 && directionPoint.y == 0)direction = Direction::Right;
-    else if(directionPoint.x < 0 && directionPoint.y == 0)direction = Direction::Left;
-    else if(directionPoint.x >= 1 && directionPoint.y >= 1)direction = Direction::DownLeft;
-    else if(directionPoint.x < 0 && directionPoint.y >= 1)direction = Direction::DownRight;
-    else if(directionPoint.x >= 1 && directionPoint.y < 0)direction = Direction::UpRight;
-    else if(directionPoint.x < 0 && directionPoint.y < 0)direction = Direction::UpLeft;
-    else if(directionPoint.x == 0 && directionPoint.y >= 1)direction = Direction::Down;
-    else if(directionPoint.x == 0 && directionPoint.y < 0)direction = Direction::Up;
+    if(directionPoint.y == 1 && directionPoint.x == 0)direction = Direction::Right;
+    else if(directionPoint.y < 0 && directionPoint.x == 0)direction = Direction::Left;
+    else if(directionPoint.y >= 1 && directionPoint.x >= 1)direction = Direction::UpRight;
+    else if(directionPoint.y < 0 && directionPoint.x >= 1)direction = Direction::UpLeft;
+    else if(directionPoint.y >= 1 && directionPoint.x < 0)direction = Direction::DownRight;
+    else if(directionPoint.y < 0 && directionPoint.x < 0)direction = Direction::DownLeft;
+    else if(directionPoint.y == 0 && directionPoint.x >= 1)direction = Direction::Up;
+    else if(directionPoint.y == 0 && directionPoint.x < 0)direction = Direction::Down;
+
     return direction;
 }
 SDL_Point getDirectionVector(Direction d){
     switch (d)
     {
     case Direction::Up:
-        return {0, -1};
+        return {-1, 0};
         break;
     case Direction::UpLeft:
         return {-1, -1};
         break;
     case Direction::UpRight:
-        return {1, -1};
+        return {-1, 1};
         break;
     case Direction::Down:
-        return {0, 1};
+        return {1, 0};
         break;
     case Direction::DownLeft:
-        return {-1, 1};
+        return {1, -1};
         break;
     case Direction::DownRight:
         return {1, 1};
         break;
     case Direction::Left:
-        return {-1, 0};
+        return {0, -1};
         break;
     case Direction::Right:
-        return {1, 0};
+        return {0, 1};
         break;
 
     

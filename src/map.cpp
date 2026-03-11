@@ -10,7 +10,6 @@ MapInfo map[BOARD_WIDTH][BOARD_HEIGHT] = {
 
 bool dirtyMap = false;
 
-Geometry<Tile_Vertex> layeredGeometry[BOARD_WIDTH + BOARD_HEIGHT - 1];
 
 void sortTilePoints(SDL_GPUDevice* renderer){
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
@@ -25,61 +24,17 @@ void sortTilePoints(SDL_GPUDevice* renderer){
     Uint8* mapPtr = (Uint8*)SDL_MapGPUTransferBuffer(renderer, tbuf, false);
 
     SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
-    Uint32 indexCount = 0;
-    Uint32 vertOffset = 0;
-    Uint32 indexOffset = 0;
-    Uint32 vertexAmt = 0;
-    for (int i = 0; i < BOARD_HEIGHT + BOARD_WIDTH - 1; i++)
-    {   
-        tileLayer[i].index = indexCount;
-        tileLayer[i].size = (Uint32)layeredGeometry[i].indices.size();
-        indexCount += tileLayer[i].size;
 
-        size_t vertSize = layeredGeometry[i].vertices.size() * sizeof(Tile_Vertex);
-        size_t indexSize = layeredGeometry[i].indices.size() * sizeof(int);
 
-        tileLayer[i].vertex = (Sint32)vertexAmt;
-
-        if(vertSize > 0){
-            memcpy(mapPtr + vertOffset, layeredGeometry[i].vertices.data(), vertSize);
-            vertOffset += vertSize;
-        }
-
-        if(indexSize > 0){
-            Uint32 tbufIndexStart = (Uint32)maxVerts + indexOffset;
-            memcpy((Uint8*)mapPtr + tbufIndexStart, layeredGeometry[i].indices.data(), indexSize);
-            indexOffset+=indexSize;
-        }
-        vertexAmt += (Uint32)layeredGeometry[i].vertices.size();
-
-        
-    }
-
-    SDL_GPUTransferBufferLocation vertSrc = { tbuf, 0 };
-    SDL_GPUBufferRegion vertDst = { tileVBuf,  0, vertOffset};
-    SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
-
-    SDL_GPUTransferBufferLocation indexSrc = { tbuf, (Uint32)maxVerts };
-    SDL_GPUBufferRegion indexDst = { tileIBuf,  0, indexOffset};
-    SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
-    
-    SDL_UnmapGPUTransferBuffer(renderer, tbuf);
-    SDL_EndGPUCopyPass(copyPass);
-    SDL_SubmitGPUCommandBuffer(cmd);
-    SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
-}
-
-void calculateTilePoints(SDL_GPUDevice* renderer){
-    for(int i = 0; i < BOARD_WIDTH + BOARD_HEIGHT - 1; i++) {
-        layeredGeometry[i].vertices.clear();
-        layeredGeometry[i].indices.clear();
-    }
     SDL_FPoint lastPoint = {0,0};
     SDL_FPoint rightVec = { (float)TILE_SIZE + 1,  (float)TILE_SIZE/2 };
     SDL_FPoint downVec  = { (float)TILE_SIZE,  (float)TILE_SIZE/2 };
 
-    int vertexOffset[BOARD_WIDTH + BOARD_HEIGHT - 1] = {};
+    int vertexOffset = 0;
+    std::vector<Tile_Vertex> vertices;
+    std::vector<int> indices;
 
+    tileIndexSize = 0;
     for (int x = 0; x < BOARD_WIDTH; x++)
     {
         lastPoint = {0  + (x*rightVec.x), 0 + (x*rightVec.y)};
@@ -107,32 +62,31 @@ void calculateTilePoints(SDL_GPUDevice* renderer){
 
             SDL_FColor color = (x + y) % 2 == 0 ? WHITE : GRAY_75;
 
+            vertices.push_back({points_w[0], x,y, color, 1.0f, {0.0f, 0.0f}});
+            vertices.push_back({points_w[1], x,y, color, 1.0f, {1.0f, 0.0f}});
+            vertices.push_back({points_w[3], x,y, color, 1.0f, {0.0f, 1.0f}});
+            vertices.push_back({points_w[4], x,y, color, 1.0f, {1.0f, 1.0f}});
 
-            layeredGeometry[x+y].vertices.push_back({points_w[0], x,y, color, 1.0f, {0.0f, 0.0f}});
-            layeredGeometry[x+y].vertices.push_back({points_w[1], x,y, color, 1.0f, {1.0f, 0.0f}});
-            layeredGeometry[x+y].vertices.push_back({points_w[3], x,y, color, 1.0f, {0.0f, 1.0f}});
-            layeredGeometry[x+y].vertices.push_back({points_w[4], x,y, color, 1.0f, {1.0f, 1.0f}});
-
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 0);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 1);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 2);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 1);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 2);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 3);
-            vertexOffset[x+y] += 4;
+            indices.push_back(vertexOffset + 0);
+            indices.push_back(vertexOffset + 1);
+            indices.push_back(vertexOffset + 2);
+            indices.push_back(vertexOffset + 1);
+            indices.push_back(vertexOffset + 2);
+            indices.push_back(vertexOffset + 3);
+            vertexOffset += 4;
             
-            layeredGeometry[x+y].vertices.push_back({points_w[1], x,y, color, 2.0f, {0.0f, 0.0f}});
-            layeredGeometry[x+y].vertices.push_back({points_w[2], x,y, color, 2.0f, {1.0f, 0.0f}});
-            layeredGeometry[x+y].vertices.push_back({points_w[4], x,y, color, 2.0f, {0.0f, 1.0f}});
-            layeredGeometry[x+y].vertices.push_back({points_w[5], x,y, color, 2.0f, {1.0f, 1.0f}});
+            vertices.push_back({points_w[1], x,y, color, 2.0f, {0.0f, 0.0f}});
+            vertices.push_back({points_w[2], x,y, color, 2.0f, {1.0f, 0.0f}});
+            vertices.push_back({points_w[4], x,y, color, 2.0f, {0.0f, 1.0f}});
+            vertices.push_back({points_w[5], x,y, color, 2.0f, {1.0f, 1.0f}});
 
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 0);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 1);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 2);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 1);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 2);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 3);
-            vertexOffset[x+y] += 4;
+            indices.push_back(vertexOffset + 0);
+            indices.push_back(vertexOffset + 1);
+            indices.push_back(vertexOffset + 2);
+            indices.push_back(vertexOffset + 1);
+            indices.push_back(vertexOffset + 2);
+            indices.push_back(vertexOffset + 3);
+            vertexOffset += 4;
 
             SDL_FPoint points[4] = {
                 {tl.x, tl.y - height},
@@ -140,29 +94,48 @@ void calculateTilePoints(SDL_GPUDevice* renderer){
                 {bl.x, bl.y - height},
                 {br.x, br.y - height}
             };
-            layeredGeometry[x+y].vertices.push_back({points[0], x,y, color, 0.0f, {0.0f, 0.0f}});
-            layeredGeometry[x+y].vertices.push_back({points[1], x,y, color, 0.0f, {1.0f, 0.0f}});
-            layeredGeometry[x+y].vertices.push_back({points[2], x,y, color, 0.0f, {0.0f, 1.0f}});
-            layeredGeometry[x+y].vertices.push_back({points[3], x,y, color, 0.0f, {1.0f, 1.0f}});
+            vertices.push_back({points[0], x,y, color, 0.0f, {0.0f, 0.0f}});
+            vertices.push_back({points[1], x,y, color, 0.0f, {1.0f, 0.0f}});
+            vertices.push_back({points[2], x,y, color, 0.0f, {0.0f, 1.0f}});
+            vertices.push_back({points[3], x,y, color, 0.0f, {1.0f, 1.0f}});
 
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 0);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 1);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 2);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 1);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 2);
-            layeredGeometry[x+y].indices.push_back(vertexOffset[x+y] + 3);
+            indices.push_back(vertexOffset + 0);
+            indices.push_back(vertexOffset + 1);
+            indices.push_back(vertexOffset + 2);
+            indices.push_back(vertexOffset + 1);
+            indices.push_back(vertexOffset + 2);
+            indices.push_back(vertexOffset + 3);
 
             memcpy(tiles[y*BOARD_WIDTH + x].tile.surface, points, sizeof(points));
             memcpy(tiles[y*BOARD_WIDTH + x].tile.wall, points_w, sizeof(points_w));
             tiles[y*BOARD_WIDTH + x].gridPos = {x, y};
             tiles[y*BOARD_WIDTH + x].height = map[x][y].height;
-            vertexOffset[x+y]+=4;
-
-
+            vertexOffset+=4;
         }   
     }
 
-    sortTilePoints(renderer);
+    tileIndexSize = (Uint32)indices.size();
+
+    size_t vertSize = vertices.size() * sizeof(Tile_Vertex);
+    size_t indexSize = indices.size() * sizeof(int);
+    if(vertSize > 0){
+        memcpy(mapPtr + 0, vertices.data(), vertSize);
+    }
+    if(indexSize > 0){
+        memcpy((Uint8*)mapPtr + vertSize, indices.data(), indexSize);
+    }
+
+    SDL_GPUTransferBufferLocation vertSrc = { tbuf, 0 };
+    SDL_GPUBufferRegion vertDst = { tileVBuf,  0, (Uint32)vertSize};
+    SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
+
+    SDL_GPUTransferBufferLocation indexSrc = { tbuf, (Uint32)vertSize };
+    SDL_GPUBufferRegion indexDst = { tileIBuf,  0, (Uint32)indexSize};
+    SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
+    
+    SDL_UnmapGPUTransferBuffer(renderer, tbuf);
+    SDL_EndGPUCopyPass(copyPass);
+    SDL_SubmitGPUCommandBuffer(cmd);
+    SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
     dirtyMap = false;
 }
-

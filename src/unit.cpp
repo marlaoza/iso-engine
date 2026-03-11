@@ -299,8 +299,6 @@ Unit* HOVERED_UNIT;
 std::vector<Unit*> units;
 Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
-Geometry<Entity_Vertex> unitGeometry[BOARD_WIDTH + BOARD_HEIGHT - 1];
-
 void sortUnits(SDL_GPUDevice* renderer){
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
 
@@ -311,59 +309,15 @@ void sortUnits(SDL_GPUDevice* renderer){
     SDL_GPUTransferBufferCreateInfo tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)totalSize };
     SDL_GPUTransferBuffer* tbuf = SDL_CreateGPUTransferBuffer(renderer, &tbufInfo);
 
-    Uint8* mapPtr = (Uint8*)SDL_MapGPUTransferBuffer(renderer, tbuf, false);
+    Uint8* buffPtr = (Uint8*)SDL_MapGPUTransferBuffer(renderer, tbuf, false);
 
     SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
-    Uint32 indexCount = 0;
-    Uint32 vertOffset = 0;
-    Uint32 indexOffset = 0;
-    Uint32 vertexAmt = 0;
-    for (int i = 0; i < BOARD_HEIGHT + BOARD_WIDTH - 1; i++)
-    {   
-        unitLayer[i].index = indexCount;
-        unitLayer[i].size = (Uint32)unitGeometry[i].indices.size();
-        indexCount += unitLayer[i].size;
 
-        size_t vertSize = unitGeometry[i].vertices.size() * sizeof(Entity_Vertex);
-        size_t indexSize = unitGeometry[i].indices.size() * sizeof(int);
-
-        unitLayer[i].vertex = (Sint32)vertexAmt;
-
-        if(vertSize > 0){
-            memcpy(mapPtr + vertOffset, unitGeometry[i].vertices.data(), vertSize);
-            vertOffset += vertSize;
-        }
-
-        if(indexSize > 0){
-            Uint32 tbufIndexStart = (Uint32)maxVerts + indexOffset;
-            memcpy((Uint8*)mapPtr + tbufIndexStart, unitGeometry[i].indices.data(), indexSize);
-            indexOffset+=indexSize;
-        }
-        vertexAmt += (Uint32)unitGeometry[i].vertices.size();
-
-        
-    }
-
-    SDL_GPUTransferBufferLocation vertSrc = { tbuf, 0 };
-    SDL_GPUBufferRegion vertDst = { unitVBuf,  0, vertOffset};
-    SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
-
-    SDL_GPUTransferBufferLocation indexSrc = { tbuf, (Uint32)maxVerts };
-    SDL_GPUBufferRegion indexDst = { unitIBuf,  0, indexOffset};
-    SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
+    int vertexOffset = 0;
+    std::vector<Entity_Vertex> vertices;
+    std::vector<int> indices;
     
-    SDL_UnmapGPUTransferBuffer(renderer, tbuf);
-    SDL_EndGPUCopyPass(copyPass);
-    SDL_SubmitGPUCommandBuffer(cmd);
-    SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
-}
-
-void calculateUnitPoints(SDL_GPUDevice* renderer){
-    for(int i = 0; i < BOARD_WIDTH + BOARD_HEIGHT - 1; i++) {
-        unitGeometry[i].vertices.clear();
-        unitGeometry[i].indices.clear();
-    }
-    int vertexOffset[BOARD_WIDTH + BOARD_HEIGHT - 1] = {};
+    unitIndexSize = 0;
 
     for (int i = 0; i < units.size(); i++)
     { 
@@ -372,7 +326,7 @@ void calculateUnitPoints(SDL_GPUDevice* renderer){
         SDL_FPoint tileOrigin = tiles[u->gridPos.y*BOARD_WIDTH + u->gridPos.x].tile.surface[0];
         SDL_FPoint tl = {tileOrigin.x + u->gridOffset.x, tileOrigin.y + u->gridOffset.y};
  
-        SDL_FPoint ptr = {tl.x, tl.y + (TILE_SIZE - u->width)};
+        SDL_FPoint ptr = {tl.x, tl.y + (TILE_SIZE/2)};
         SDL_FPoint points_p[4] = {
             {ptr.x - u->width, ptr.y - u->height},
             {ptr.x + u->width +1, ptr.y - u->height},
@@ -394,26 +348,46 @@ void calculateUnitPoints(SDL_GPUDevice* renderer){
             if(index >= BOARD_WIDTH + BOARD_HEIGHT - 1) index = BOARD_WIDTH + BOARD_HEIGHT - 2;
             if(index < 0) index = 0;
         }
-
-        
       
-        unitGeometry[index].vertices.push_back({points_p[0], {0.0f, 0.0f}, 1});
-        unitGeometry[index].vertices.push_back({points_p[1], {1.0f, 0.0f}, 1});
-        unitGeometry[index].vertices.push_back({points_p[2], {0.0f, 1.0f}, 1});
-        unitGeometry[index].vertices.push_back({points_p[3], {1.0f, 1.0f}, 1});
+        vertices.push_back({points_p[0], {0.0f, 0.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y});
+        vertices.push_back({points_p[1], {1.0f, 0.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y});
+        vertices.push_back({points_p[2], {0.0f, 1.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y});
+        vertices.push_back({points_p[3], {1.0f, 1.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y});
 
-        unitGeometry[index].indices.push_back(vertexOffset[index]);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 1);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 2);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 1);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 2);
-        unitGeometry[index].indices.push_back(vertexOffset[index] + 3);
+        indices.push_back(vertexOffset);
+        indices.push_back(vertexOffset + 1);
+        indices.push_back(vertexOffset + 2);
+        indices.push_back(vertexOffset + 1);
+        indices.push_back(vertexOffset + 2);
+        indices.push_back(vertexOffset + 3);
 
-        vertexOffset[index]+=4;
+        vertexOffset+=4;
     }
 
-    sortUnits(renderer);
+
+    unitIndexSize = (Uint32)indices.size();
+
+
+    size_t vertSize = vertices.size() * sizeof(Entity_Vertex);
+    size_t indexSize = indices.size() * sizeof(int);
+    if(vertSize > 0){
+        memcpy(buffPtr + 0, vertices.data(), vertSize);
+    }
+    if(indexSize > 0){
+        memcpy((Uint8*)buffPtr + vertSize, indices.data(), indexSize);
+    }
+
+    SDL_GPUTransferBufferLocation vertSrc = { tbuf, 0 };
+    SDL_GPUBufferRegion vertDst = { unitVBuf,  0, (Uint32)vertSize};
+    SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
+
+    SDL_GPUTransferBufferLocation indexSrc = { tbuf, (Uint32)vertSize };
+    SDL_GPUBufferRegion indexDst = { unitIBuf,  0, (Uint32)indexSize};
+    SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
+    
+    SDL_UnmapGPUTransferBuffer(renderer, tbuf);
+    SDL_EndGPUCopyPass(copyPass);
+    SDL_SubmitGPUCommandBuffer(cmd);
+    SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
     dirtyUnits = false;
-
 }
-

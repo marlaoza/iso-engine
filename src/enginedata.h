@@ -6,6 +6,7 @@
 
 extern float DELTA_TIME;
 extern Uint64 LAST_TIME;
+extern float FRAME_TIME;
 
 extern float SCALE;
 extern int WIDTH;
@@ -27,11 +28,11 @@ struct SceneUniforms {
     float camX;
     float camY;
     float camZoom;
-    float padding0;
+    float frameTime;
     int selectedX;
     int selectedY;
     int mapSize;
-    int padding1;
+    int padding0;
 };
 
 struct MapCell {

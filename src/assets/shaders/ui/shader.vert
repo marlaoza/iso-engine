@@ -7,7 +7,7 @@ cbuffer SceneData : register(b0) {
     float camX;
     float camY;
     float camZoom;
-    float padding0;
+    float frameTime;
     int selectedX;
     int selectedY;
     int mapSize;

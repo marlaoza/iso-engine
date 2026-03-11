@@ -7,7 +7,7 @@ cbuffer SceneData : register(b0) {
     float camX;
     float camY;
     float camZoom;
-    float padding0;
+    float frameTime;
     int selectedX;
     int selectedY;
     int mapSize;
@@ -40,13 +40,12 @@ VSOutput main(VSInput input) {
     float2 normCam = float2(camX, camY);
     
     float2 p = (normPos - normCam) * camZoom;
+        
+    float depth = (float)(input.gridPos.x + input.gridPos.y) / (float)mapSize;
 
-
-    float finalDepth = 1.0 - float(input.gridPos.x + input.gridPos.y) / float(mapSize);
-    
     output.pos = float4((p.x / resolution.x) * 2.0 - 1.0, 
                         (p.y / resolution.y) * -2.0 + 1.0, 
-                        finalDepth, 1.0);
+                        1.0 - depth, 1.0);
 
     output.gridPos = input.gridPos;
     output.col = input.col;

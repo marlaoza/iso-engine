@@ -11,4 +11,3 @@ extern bool dirtyHighlights;
 void sortHighlight(SDL_GPUDevice* renderer);
 void addHighlight(SDL_Point p, int type, int pallete);
 void clearHighlight(SDL_Point p);
-void addHighlightGeometry(SDL_Point p, int vertexOffset[], int type);
