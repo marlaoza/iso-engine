@@ -39,6 +39,10 @@ VSOutput main(VSInput input) {
     float2 p = (normPos - normCam) * camZoom;
 
     float depth = ( (float)(input.gridPos.x + input.gridPos.y) / (float)mapSize ) + 0.002;
+
+    if(input.type == 1){
+        depth += 0.001;
+    }
     
     output.pos = float4((p.x / resolution.x) * 2.0 - 1.0, 
                         (p.y / resolution.y) * -2.0 + 1.0, 

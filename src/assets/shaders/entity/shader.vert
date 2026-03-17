@@ -21,7 +21,7 @@ struct VSInput {
     int direction: TEXCOORD2;
     int state: TEXCOORD3;
     int2 gridPos : TEXCOORD5;
-
+    int indexOffset: TEXCOORD6; 
 
 };
 
@@ -45,7 +45,9 @@ VSOutput main(VSInput input) {
     
     float2 p = (normPos - normCam) * camZoom;
 
-    float depth = ( (float)(input.gridPos.x + input.gridPos.y) / (float)mapSize ) + 0.005;
+    float index = (float)(input.gridPos.x + input.gridPos.y + input.indexOffset);
+    float depth = (index / (float)mapSize) + 0.005;
+
 
     output.pos = float4((p.x / resolution.x) * 2.0 - 1.0, 
                         (p.y / resolution.y) * -2.0 + 1.0, 

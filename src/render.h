@@ -18,6 +18,7 @@ struct Entity_Vertex {
     int direction;
     int state;
     int32_t gridX, gridY;
+    int indexOffset;
 };
 
 struct Highlight_Vertex {

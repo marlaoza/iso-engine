@@ -213,7 +213,7 @@ SDL_GPUTexture* unitTextureArray;
 SDL_GPUSampler* unitSampler;
 void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
-    SDL_GPUVertexAttribute attributes[6];
+    SDL_GPUVertexAttribute attributes[7];
 
     attributes[0].location = 0;
     attributes[0].buffer_slot = 0;
@@ -245,6 +245,11 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     attributes[5].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;
     attributes[5].offset = sizeof(float) * 4 + sizeof(int) * 3;
 
+    attributes[6].location = 6;
+    attributes[6].buffer_slot = 0;
+    attributes[6].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
+    attributes[6].offset = sizeof(float) * 4 + sizeof(int) * 5;
+
     pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/entity/vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
     pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/entity/fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
 
@@ -257,7 +262,7 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     }
     };
     pipelineInfo.vertex_input_state.vertex_attributes = attributes;
-    pipelineInfo.vertex_input_state.num_vertex_attributes = 6;
+    pipelineInfo.vertex_input_state.num_vertex_attributes = 7;
 
     pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 

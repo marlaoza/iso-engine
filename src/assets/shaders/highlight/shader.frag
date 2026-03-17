@@ -34,7 +34,9 @@ float4 main(PSInput input) : SV_Target {
         color = float4(1.0, 0.0, 0.0, 0.5); //vermei
     }
 
-    
+     if (color.a < 0.1) {
+        discard;
+    }
 
     return color;
 }

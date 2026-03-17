@@ -335,7 +335,6 @@ void sortUnits(SDL_GPUDevice* renderer){
         };
    
 
-        int index = u->gridPos.x + u->gridPos.y;
         int indexSum = 0;
 
         if(u->state == UnitState::Moving){
@@ -344,15 +343,13 @@ void sortUnits(SDL_GPUDevice* renderer){
             if(u->gridPos.x > u->targetPos.x){if(normOffset.x > (float)(TILE_SIZE/1.5f)){indexSum = -1;}}
             if(u->gridPos.y < u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/3.0f){indexSum = 1;}}
             if(u->gridPos.y > u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/1.5f){indexSum = -1;}}
-            index += indexSum;
-            if(index >= BOARD_WIDTH + BOARD_HEIGHT - 1) index = BOARD_WIDTH + BOARD_HEIGHT - 2;
-            if(index < 0) index = 0;
         }
+
       
-        vertices.push_back({points_p[0], {0.0f, 0.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y});
-        vertices.push_back({points_p[1], {1.0f, 0.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y});
-        vertices.push_back({points_p[2], {0.0f, 1.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y});
-        vertices.push_back({points_p[3], {1.0f, 1.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y});
+        vertices.push_back({points_p[0], {0.0f, 0.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y, indexSum});
+        vertices.push_back({points_p[1], {1.0f, 0.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y, indexSum});
+        vertices.push_back({points_p[2], {0.0f, 1.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y, indexSum});
+        vertices.push_back({points_p[3], {1.0f, 1.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y, indexSum});
 
         indices.push_back(vertexOffset);
         indices.push_back(vertexOffset + 1);
