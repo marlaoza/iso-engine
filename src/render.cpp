@@ -8,6 +8,7 @@
 #include <iostream>
 #include <SDL3_ttf/SDL_ttf.h>
 #include "colors.h"
+#include "managers/inputManager.h"
 
 SDL_GPUDevice* renderer;
 
@@ -69,13 +70,13 @@ SDL_GPUBuffer* textVBuf;
 SDL_GPUBuffer* textIBuf;
 int TextIndexSize = 0;
 
-SDL_GPUTexture* createTextTexture(const char* text, SDL_FColor color, TTF_Font* font, int* width, int* height){
+SDL_GPUTexture* createTextTexture(const char* text, SDL_FColor color, TTF_Font* font, int* width, int* height, int maxWidth){
 
     SDL_Color col = {
         (Uint8)(color.r * 255), (Uint8)(color.g * 255),
         (Uint8)(color.b * 255), (Uint8)(color.a * 255)
     };
-    SDL_Surface* surface = TTF_RenderText_Blended(font, text, 0, col);
+    SDL_Surface* surface = TTF_RenderText_Blended_Wrapped(font, text, 0, col, maxWidth);
 
     SDL_GPUTextureCreateInfo texInfo = {};
     texInfo.type = SDL_GPU_TEXTURETYPE_2D;

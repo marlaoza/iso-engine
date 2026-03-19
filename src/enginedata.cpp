@@ -11,9 +11,6 @@ float SCALE = 1;
 int WIDTH = MIN_WIDTH, HEIGHT = MIN_HEIGHT;
 float CANVAS_WIDTH = MIN_WIDTH, CANVAS_HEIGHT = MIN_HEIGHT;
 
-SDL_FPoint INPUT_AXIS = {0, 0};
-SDL_FPoint MOUSE_POS = {0,0};
-
 SDL_Point SELECTED_TILE = {-1, -1};
 
 void calculateDeltaTime() {

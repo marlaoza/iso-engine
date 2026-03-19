@@ -8,6 +8,7 @@
 #include "unit.h"
 #include "ui.h"
 #include "highlight.h"
+#include "managers/inputManager.h"
 
 
 bool watcher(void *userdata, SDL_Event* event){
@@ -178,34 +179,6 @@ void toggleUnitUI(SDL_GPUDevice* renderer){
     }
 }
 
-
-void onKeyDown(SDL_Keycode key){
-    switch(key){
-        case SDLK_W:case SDLK_UP:
-            INPUT_AXIS.y = -1; break;
-        case SDLK_S:case SDLK_DOWN:
-            INPUT_AXIS.y =  1; break;
-        case SDLK_D:case SDLK_RIGHT:
-            INPUT_AXIS.x =  1; break;
-        case SDLK_A:case SDLK_LEFT:
-            INPUT_AXIS.x = -1; break;
-        default: break; 
-    }
-}
-void onKeyUp(SDL_Keycode key){
-    switch(key){
-        case SDLK_W:case SDLK_UP:
-            if(INPUT_AXIS.y == -1) INPUT_AXIS.y = 0; break;
-        case SDLK_S:case SDLK_DOWN:
-            if(INPUT_AXIS.y == 1)  INPUT_AXIS.y = 0; break;
-        case SDLK_D:case SDLK_RIGHT:
-            if(INPUT_AXIS.x == 1)  INPUT_AXIS.x = 0; break;
-        case SDLK_A:case SDLK_LEFT:
-            if(INPUT_AXIS.x == -1) INPUT_AXIS.x = 0; break;
-        default: break; 
-    }
-}
-
 int main(int argc, char *argv[]){
     SDL_Window *window = NULL;
     SDL_GPUDevice *renderer = NULL;
@@ -239,13 +212,8 @@ int main(int argc, char *argv[]){
             if(windowEvent.type == SDL_EVENT_QUIT){break;}
             if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key);}
             if(windowEvent.type == SDL_EVENT_KEY_UP){onKeyUp(windowEvent.key.key);}
-            if(windowEvent.type == SDL_EVENT_MOUSE_MOTION){
-                MOUSE_POS.x = windowEvent.motion.x;
-                MOUSE_POS.y = windowEvent.motion.y;
-            }
-            if(windowEvent.type == SDL_EVENT_MOUSE_WHEEL){
-                zoomCamera(windowEvent.wheel.y);
-            }
+            if(windowEvent.type == SDL_EVENT_MOUSE_MOTION){onMouseMotion(windowEvent.motion);}
+            if(windowEvent.type == SDL_EVENT_MOUSE_WHEEL){zoomCamera(windowEvent.wheel.y);}
             if(windowEvent.type == SDL_EVENT_MOUSE_BUTTON_DOWN){
                 if(windowEvent.button.button == SDL_BUTTON_LEFT){
                     if(SELECTED_ELEMENT && SELECTED_ELEMENT->onClick)SELECTED_ELEMENT->onClick(SELECTED_ELEMENT->param);
@@ -293,10 +261,7 @@ int main(int argc, char *argv[]){
             dirtyHighlights = true;
         } 
         else {findSelectedTile();}
-        for (Unit* u : units)
-        {
-            if(u->state == UnitState::Moving) u->move();
-        }
+        for (Unit* u : units){if(u->state == UnitState::Moving) u->move();}
         if(dirtyMap)sortTilePoints(renderer);
         if(dirtyHighlights)sortHighlight(renderer);
         if(dirtyUnits)sortUnits(renderer);

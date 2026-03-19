@@ -77,7 +77,7 @@ void createUIPipeline(SDL_GPUDevice* renderer, SDL_Window* window);
 
 extern TTF_Font* font_main;
 
-SDL_GPUTexture* createTextTexture(const char* text, SDL_FColor color, TTF_Font* font, int* width, int* height);
+SDL_GPUTexture* createTextTexture(const char* text, SDL_FColor color, TTF_Font* font, int* width, int* height, int maxWidth = 0);
 
 extern SDL_GPUTexture* UISpriteSheet;
 extern SDL_GPUSampler* uiSampler;

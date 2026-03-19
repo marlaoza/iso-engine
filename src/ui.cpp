@@ -48,7 +48,7 @@ bool UIElement::inBounds(SDL_FPoint point){
 
 void UIElement::addText(UIText textToAdd){
     UIText* acTxt = new UIText(textToAdd);
-    acTxt->texture = createTextTexture(acTxt->content, acTxt->color, font_main, &acTxt->width, &acTxt->height);
+    acTxt->texture = createTextTexture(acTxt->content, acTxt->color, font_main, &acTxt->width, &acTxt->height, this->width);
     SDL_GPUTextureCreateInfo info; 
     
     acTxt->id = this->text.size();

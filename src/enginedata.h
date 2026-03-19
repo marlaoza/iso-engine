@@ -13,9 +13,6 @@ extern int WIDTH;
 extern int HEIGHT;
 extern float CANVAS_WIDTH, CANVAS_HEIGHT;
 
-extern SDL_FPoint INPUT_AXIS;
-extern SDL_FPoint MOUSE_POS;
-
 extern SDL_Point SELECTED_TILE;
 
 void calculateDeltaTime();
