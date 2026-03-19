@@ -105,6 +105,14 @@ void findSelectedUIElement(){
 }
 
 void createUnitUI(){
+    UIText t = {
+        0,
+        "mover",
+        {0, 0},
+        WHITE,
+    };
+    btnMove->addText(t);
+
     btnMove->onClick = [](int param){
         if(SELECTED_UNIT != nullptr){
             SELECTED_UNIT->selectSkill(param);
@@ -292,7 +300,7 @@ int main(int argc, char *argv[]){
         if(dirtyMap)sortTilePoints(renderer);
         if(dirtyHighlights)sortHighlight(renderer);
         if(dirtyUnits)sortUnits(renderer);
-        if(dirtyUi)updateElementBuffer(renderer);
+        if(dirtyUi)sortUiElements(renderer);
         render(renderer, window);
     }
 

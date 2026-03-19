@@ -47,6 +47,7 @@ Unit::~Unit() {
     skills.clear();
 
     unitMap[gridPos.y * BOARD_WIDTH + gridPos.x] = nullptr;
+    dirtyUnits = true;
 }
 
 void Unit::select(){

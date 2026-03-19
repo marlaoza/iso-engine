@@ -2,4 +2,4 @@ SRCS = main.cpp src/enginedata.cpp src/map.cpp src/geometry.cpp src/unit.cpp src
 INCLUDES = -I src -I src/include/ -I src/include/sdl3
 
 all:
-	g++ $(INCLUDES) -L src/lib -o main $(SRCS) -lmingw32 -lSDL3 -static-libgcc -static-libstdc++
+	g++ $(INCLUDES) -L src/lib -o main $(SRCS) -lmingw32 -lSDL3 -lSDL3_ttf -static-libgcc -static-libstdc++

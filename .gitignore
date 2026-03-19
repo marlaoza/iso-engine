@@ -33,10 +33,6 @@
 
 .vscode
 
-
-src/assets/shaders/entity/fragShader
-src/assets/shaders/entity/vertShader
-
 src/assets/shaders/tile/fragShader
 src/assets/shaders/tile/vertShader
 
@@ -45,3 +41,11 @@ src/assets/shaders/ui/vertShader
 
 src/assets/shaders/highlight/fragShader
 src/assets/shaders/highlight/vertShader
+
+src/assets/shaders/entity/fragShader
+src/assets/shaders/entity/vertShader
+
+src/assets/shaders/entity/shadow/fragShader
+src/assets/shaders/entity/shadow/vertShader
+src/assets/shaders/ui/text/fragShader
+src/assets/shaders/ui/text/vertShader

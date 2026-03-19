@@ -2,6 +2,12 @@
 #include "SDL_gpu.h"
 #include <vector>
 #include "constants.h"
+#include <SDL3_ttf/SDL_ttf.h>
+
+extern SDL_GPUDevice* renderer;
+
+extern std::vector<SDL_GPUTexture*> textDrawCalls;
+
 
 struct Tile_Vertex {
     SDL_FPoint pos;
@@ -39,6 +45,13 @@ struct UI_Vertex {
     int32_t state;
 };
 
+struct Text_Vertex {
+    SDL_FPoint pos;
+    SDL_FPoint uv;
+    SDL_FColor color;
+    int32_t state;
+};
+
 template<typename T>
 struct Geometry {
     std::vector<T> vertices;
@@ -62,6 +75,10 @@ void createPipeline(SDL_GPUDevice* renderer, SDL_Window* window);
 void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window);
 void createUIPipeline(SDL_GPUDevice* renderer, SDL_Window* window);
 
+extern TTF_Font* font_main;
+
+SDL_GPUTexture* createTextTexture(const char* text, SDL_FColor color, TTF_Font* font, int* width, int* height);
+
 extern SDL_GPUTexture* UISpriteSheet;
 extern SDL_GPUSampler* uiSampler;
 
@@ -84,6 +101,10 @@ extern int unitIndexSize;
 extern SDL_GPUBuffer* UIVBuf;
 extern SDL_GPUBuffer* UIIBuf;
 extern int UIIndexSize;
+
+extern SDL_GPUBuffer* textVBuf;
+extern SDL_GPUBuffer* textIBuf;
+extern int TextIndexSize;
 
 void render(SDL_GPUDevice* renderer, SDL_Window* window);
 SDL_GPUDevice* createRenderer(SDL_Window* window);
