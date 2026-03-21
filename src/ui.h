@@ -5,6 +5,7 @@
 #include "geometry.h"
 #include "render.h"
 #include "colors.h"
+#include "sprite.h"
 
 enum class UIState {
     Default, //0
@@ -32,7 +33,7 @@ class UIElement {
         void (*onHover)(int param);
         void (*offHover)(int param);
 
-        UIElement(SDL_FPoint position, int height, int width, bool interactable, int param, int texture = 8, int hlTexture = -1, SDL_FColor tint = WHITE);
+        UIElement(SDL_FPoint position, int width, int height, bool interactable, Sprite texture = empty, Sprite hlTexture = empty, int param = -1,  SDL_FColor tint = WHITE);
         ~UIElement();
 
 
@@ -47,8 +48,8 @@ class UIElement {
 
         UIState getState();
 
-        void setTexture(int texture);
-        void setHLTexture(int HLTexture);
+        void setSprite(Sprite sprite);
+        void setHLSprite(Sprite HlSprite);
         void setTint(SDL_FColor tint);
 
         SDL_FPoint getPosition();
@@ -56,8 +57,8 @@ class UIElement {
 
         std::vector<UIText*> getText();
 
-        int* getTextureInfo();
-        int* getHLTextureInfo();
+        Sprite getSprite();
+        Sprite getHLSprite();
 
         int getWidth();
         int getHeight();
@@ -70,8 +71,8 @@ class UIElement {
         SDL_FPoint position;
         int height, width;
         UIState state;
-        int texture;
-        int hlTexture;
+        Sprite sprite;
+        Sprite hlSprite;
         SDL_FColor tint;
         };
 

@@ -8,7 +8,9 @@
 #include "unit.h"
 #include "ui.h"
 #include "highlight.h"
+#include "sprite.h"
 #include "managers/inputManager.h"
+#include "managers/dialogManager.h"
 
 
 bool watcher(void *userdata, SDL_Event* event){
@@ -63,13 +65,10 @@ void findSelectedTile(){
 
 UIElement* SELECTED_ELEMENT;
 
-
-UIElement* FTSelectedUi = new UIElement({10, 250} , 192, 97, false, -1, 7);
-UIElement* MTSelectedUi = new UIElement({202, 288}, 100, 32, false, -1, 5);
-UIElement* LTSelectedUi = new UIElement({302, 288}, 14, 32,  false, -1, 6);
-UIElement* btnMove = new UIElement({105, 295}, 53, 27, true, 0, 0, 3);
-
-UIElement* btnPass = new UIElement({132, 296}, 29, 39, true, 0, 1, 4);
+UIElement* SelectedUi;
+UIElement* SelectedUiTail;
+UIElement* btnMove;
+UIElement* btnPass;
 UIElement* skillButtons[6];
 
 void findSelectedUIElement(){
@@ -106,13 +105,18 @@ void findSelectedUIElement(){
 }
 
 void createUnitUI(){
-    UIText t = {
-        0,
-        "mover",
-        {0, 0},
-        WHITE,
-    };
-    btnMove->addText(t);
+    SelectedUi = new UIElement({10, 250}, 194, 100, false, unitOverlay);
+    SelectedUiTail = new UIElement({200, 287}, 40, 37, false, unitOverlayTail);
+
+    btnMove = new UIElement({105, 295}, 53, 27, true, unitButtonLeft, unitButtonLeftHL, 0);
+    btnPass = new UIElement({132, 296}, 29, 39, true, unitButtonRight, unitButtonRightHL, 0);
+    // UIText t = {
+    //     0,
+    //     "mover",
+    //     {0, 0},
+    //     WHITE,
+    // };
+    // btnMove->addText(t);
 
     btnMove->onClick = [](int param){
         if(SELECTED_UNIT != nullptr){
@@ -132,7 +136,7 @@ void createUnitUI(){
     float x = 170.0f;
     for (int i = 0; i < 6; i++)
     {
-        skillButtons[i] = new UIElement({x, 270}, 45, 40, true, i+1, 2);
+        skillButtons[i] = new UIElement({x, 270}, 45, 40, true, skillButton, skillButtonHL, i+1);
         skillButtons[i]->onClick = [](int param){
             if(SELECTED_UNIT != nullptr){
                 SELECTED_UNIT->selectSkill(param);
@@ -157,9 +161,8 @@ void toggleUnitUI(SDL_GPUDevice* renderer){
     if(SELECTED_UNIT == nullptr){
         btnMove->setState(UIState::Hidden);
         btnPass->setState(UIState::Hidden);
-        FTSelectedUi->setState(UIState::Hidden);
-        MTSelectedUi->setState(UIState::Hidden);
-        LTSelectedUi->setState(UIState::Hidden);
+        SelectedUi->setState(UIState::Hidden);
+        SelectedUiTail->setState(UIState::Hidden);
         for (int i = 0; i < 6; i++)
         {
             skillButtons[i]->setState(UIState::Hidden);
@@ -167,15 +170,12 @@ void toggleUnitUI(SDL_GPUDevice* renderer){
     }else{
         btnMove->setState(UIState::Default);
         btnPass->setState(UIState::Default);
-        FTSelectedUi->setState(UIState::Default);
-        MTSelectedUi->setState(UIState::Default);
-        LTSelectedUi->setState(UIState::Default);       
+        SelectedUi->setState(UIState::Default);
+        SelectedUiTail->setState(UIState::Default);
         for (int i = 0; i < SELECTED_UNIT->skills.size()-1; i++)
         {
             skillButtons[i]->setState(UIState::Default);
         } 
-        
-
     }
 }
 
@@ -198,10 +198,10 @@ int main(int argc, char *argv[]){
     if(renderer == NULL){
         return 1;
     }
-    
-    createUnitUI();
-    toggleUnitUI(renderer);
 
+    createUnitUI();
+
+    toggleUnitUI(renderer);
     sortTilePoints(renderer);
 
     SDL_Event windowEvent;
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]){
 
         if(SDL_PollEvent(&windowEvent)){
             if(windowEvent.type == SDL_EVENT_QUIT){break;}
-            if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key);}
+            if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key);if(windowEvent.key.key == SDLK_E){if(dialogManager) dialogManager->advance();}}
             if(windowEvent.type == SDL_EVENT_KEY_UP){onKeyUp(windowEvent.key.key);}
             if(windowEvent.type == SDL_EVENT_MOUSE_MOTION){onMouseMotion(windowEvent.motion);}
             if(windowEvent.type == SDL_EVENT_MOUSE_WHEEL){zoomCamera(windowEvent.wheel.y);}
@@ -244,9 +244,9 @@ int main(int argc, char *argv[]){
                             SELECTED_UNIT->selectedSkill = -1;
                             SELECTED_UNIT->state = UnitState::Idle;
                         }
-                        else SELECTED_UNIT->desselect();toggleUnitUI(renderer);
+                        else {SELECTED_UNIT->desselect();toggleUnitUI(renderer);}
                     }
-                    else if(!unitMap[SELECTED_TILE.y * BOARD_WIDTH + SELECTED_TILE.x]){
+                    else if(SELECTED_TILE.x >= 0 && SELECTED_TILE.y >= 0 && !unitMap[SELECTED_TILE.y * BOARD_WIDTH + SELECTED_TILE.x]){
                         new Unit("carinha", SELECTED_TILE, 28, 5, 10, 3);
                     }
                     

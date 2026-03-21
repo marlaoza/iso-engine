@@ -5,7 +5,7 @@
 #include "colors.h"
 #include "geometry.h"
 
-UIElement::UIElement(SDL_FPoint position, int width, int height, bool interactable, int param, int texture, int hlTexture, SDL_FColor tint) {
+UIElement::UIElement(SDL_FPoint position, int width, int height, bool interactable, Sprite sprite, Sprite hlSprite, int param, SDL_FColor tint) {
     this->id = UIElements.size();
     this->position = position;
     this->height = height;
@@ -16,8 +16,12 @@ UIElement::UIElement(SDL_FPoint position, int width, int height, bool interactab
     this->onClick = nullptr;
     this->onHover = nullptr;
     this->offHover = nullptr;
-    this->texture = texture;
-    this->hlTexture = hlTexture;
+    this->sprite = sprite;
+    if(hlSprite.c.pos.x == 0 && hlSprite.c.pos.y == 0){
+        this->hlSprite = sprite;
+    }else{
+        this->hlSprite = hlSprite;
+    }
     this->tint = tint;
     UIElements.push_back(this);
     dirtyUi = true;
@@ -37,7 +41,6 @@ UIElement::~UIElement(){
 
     dirtyUi = true;
 }
-
 
 bool UIElement::inBounds(SDL_FPoint point){
     return point.x >= this->position.x && 
@@ -85,12 +88,12 @@ void UIElement::setSize(int width , int height ){
     this->width = width;
     dirtyUi = true;
 };
-void UIElement::setTexture(int texture){
-    this->texture = texture;
+void UIElement::setSprite(Sprite sprite){
+    this->sprite = sprite;
     dirtyUi = true;
 };
-void UIElement::setHLTexture(int hlTexture){
-    this->hlTexture = hlTexture;
+void UIElement::setHLSprite(Sprite HlSprite){
+    this->hlSprite = HlSprite;
     dirtyUi = true;
 };
 void UIElement::setTint(SDL_FColor tint){
@@ -99,13 +102,12 @@ void UIElement::setTint(SDL_FColor tint){
 };
 
 
-int* UIElement::getTextureInfo() {
-    return UITextureMap[this->texture];
+Sprite UIElement::getSprite() {
+    return this->sprite;
 }
 
-int* UIElement::getHLTextureInfo() {
-    int* HLTextureInfo = this->hlTexture == -1 ? UITextureMap[this->texture] : UITextureMap[this->hlTexture];
-    return HLTextureInfo;
+Sprite UIElement::getHLSprite() {
+    return this->hlSprite;
 }
 UIState UIElement::getState(){return this->state;}
 SDL_FPoint UIElement::getPosition() {return this->position;}
@@ -138,8 +140,8 @@ void sortUiElements(SDL_GPUDevice* renderer){
     { 
         UIElement* u = UIElements[i];
             
-        int* textureInfo = u->getTextureInfo(); 
-        int* HLTextureInfo = u->getHLTextureInfo();
+        Sprite sprite = u->getSprite(); 
+        Sprite HLSprite = u->getHLSprite();
 
         SDL_FPoint position = u->getPosition();
         int width = u->getWidth();
@@ -149,49 +151,139 @@ void sortUiElements(SDL_GPUDevice* renderer){
 
         UIState state = u->getState();
 
-        vertices.push_back({
-            position, 
-            {0.0f, 0.0f}, 
-            tint, 
-            textureInfo[0], textureInfo[1], textureInfo[2], textureInfo[3], 
-            HLTextureInfo[0], HLTextureInfo[1], HLTextureInfo[2], HLTextureInfo[3], 
-            (int32_t)state
-        });
+        if(sprite.type == SpriteType::Default){
 
-        vertices.push_back({
-            {position.x + width, position.y}, 
-            {1.0f, 0.0f}, 
-            tint,
-            textureInfo[0], textureInfo[1], textureInfo[2], textureInfo[3], 
-            HLTextureInfo[0], HLTextureInfo[1], HLTextureInfo[2], HLTextureInfo[3], 
-            (int32_t)state
-        });
+            vertices.push_back({
+                position, 
+                {0.0f, 0.0f}, 
+                tint, 
+                sprite.c.pos.x, sprite.c.pos.y, sprite.c.width, sprite.c.height, 
+                HLSprite.c.pos.x, HLSprite.c.pos.y, HLSprite.c.width, HLSprite.c.height, 
+                (int32_t)state
+            });
 
-        vertices.push_back({
-            {position.x, position.y + height}, 
-            {0.0f, 1.0f}, 
-            tint,
-            textureInfo[0], textureInfo[1], textureInfo[2], textureInfo[3], 
-            HLTextureInfo[0], HLTextureInfo[1], HLTextureInfo[2], HLTextureInfo[3], 
-            (int32_t)state
-        });
-        vertices.push_back({
-            {position.x + width, position.y + height}, 
-            {1.0f, 1.0f}, 
-            tint,
-            textureInfo[0], textureInfo[1], textureInfo[2], textureInfo[3], 
-            HLTextureInfo[0], HLTextureInfo[1], HLTextureInfo[2], HLTextureInfo[3], 
-            (int32_t)state
-        });
+            vertices.push_back({
+                {position.x + width, position.y}, 
+                {1.0f, 0.0f}, 
+                tint,
+                sprite.c.pos.x, sprite.c.pos.y, sprite.c.width, sprite.c.height, 
+                HLSprite.c.pos.x, HLSprite.c.pos.y, HLSprite.c.width, HLSprite.c.height, 
+                (int32_t)state
+            });
 
-        indices.push_back(vertexOffset + 0);
-        indices.push_back(vertexOffset + 1);
-        indices.push_back(vertexOffset + 2);
-        indices.push_back(vertexOffset + 1);
-        indices.push_back(vertexOffset + 2);
-        indices.push_back(vertexOffset + 3);
+            vertices.push_back({
+                {position.x, position.y + height}, 
+                {0.0f, 1.0f}, 
+                tint,
+                sprite.c.pos.x, sprite.c.pos.y, sprite.c.width, sprite.c.height, 
+                HLSprite.c.pos.x, HLSprite.c.pos.y, HLSprite.c.width, HLSprite.c.height, 
+                (int32_t)state
+            });
+            vertices.push_back({
+                {position.x + width, position.y + height}, 
+                {1.0f, 1.0f}, 
+                tint,
+                sprite.c.pos.x, sprite.c.pos.y, sprite.c.width, sprite.c.height, 
+                HLSprite.c.pos.x, HLSprite.c.pos.y, HLSprite.c.width, HLSprite.c.height, 
+                (int32_t)state
+            });
 
-        vertexOffset+=4;
+            indices.push_back(vertexOffset + 0);
+            indices.push_back(vertexOffset + 1);
+            indices.push_back(vertexOffset + 2);
+            indices.push_back(vertexOffset + 1);
+            indices.push_back(vertexOffset + 2);
+            indices.push_back(vertexOffset + 3);
+
+            vertexOffset+=4;
+        }else{
+            //else criar 9! quads. 
+            
+            int stretchWidth = width - sprite.cl.width - sprite.cr.width;
+            if(stretchWidth <= 0) sprite.c.width;
+            int stretchHeight = height - sprite.tr.height - sprite.br.height;
+            if(stretchHeight <= 0) sprite.c.height;
+
+            Texture spriteSlices[3][3] 
+            = 
+            {
+                {sprite.tl, sprite.tc, sprite.tr},
+                {sprite.cl, sprite.c, sprite.cr},
+                {sprite.bl, sprite.bc, sprite.br},
+            };
+
+            Texture HLspriteSlices[3][3] 
+            = 
+            {
+                {HLSprite.tl, HLSprite.tc, HLSprite.tr},
+                {HLSprite.cl, HLSprite.c, HLSprite.cr},
+                {HLSprite.bl, HLSprite.bc, HLSprite.br},
+            };
+
+            int Twidth = 0;
+            int Theight = 0;
+            SDL_FPoint lastPos = position;
+            for (int y = 0; y < 3; y++)
+            {
+                for(int x = 0; x < 3; x++){
+                    Texture t = spriteSlices[y][x];
+                    Texture hl = HLspriteSlices[y][x];
+
+                    Twidth = t.width;
+                    Theight = t.height;
+
+                    if(x == 1){Twidth = stretchWidth;}
+                    if(y == 1){Theight = stretchHeight;}
+
+                    vertices.push_back({
+                        lastPos, 
+                        {0.0f, 0.0f}, 
+                        tint, 
+                        t.pos.x, t.pos.y, t.width, t.height, 
+                        hl.pos.x, hl.pos.y, hl.width, hl.height, 
+                        (int32_t)state
+                    });
+                    vertices.push_back({
+                        {lastPos.x + Twidth, lastPos.y}, 
+                        {1.0f, 0.0f}, 
+                        tint,
+                        t.pos.x, t.pos.y, t.width, t.height, 
+                        hl.pos.x, hl.pos.y, hl.width, hl.height, 
+                        (int32_t)state
+                    });
+                    vertices.push_back({
+                        {lastPos.x, lastPos.y + Theight}, 
+                        {0.0f, 1.0f}, 
+                        tint,
+                        t.pos.x, t.pos.y, t.width, t.height, 
+                        hl.pos.x, hl.pos.y, hl.width, hl.height, 
+                        (int32_t)state
+                    });
+                    vertices.push_back({
+                        {lastPos.x + Twidth, lastPos.y + Theight}, 
+                        {1.0f, 1.0f}, 
+                        tint,
+                        t.pos.x, t.pos.y, t.width, t.height, 
+                        hl.pos.x, hl.pos.y, hl.width, hl.height, 
+                        (int32_t)state
+                    });
+                    indices.push_back(vertexOffset + 0);
+                    indices.push_back(vertexOffset + 1);
+                    indices.push_back(vertexOffset + 2);
+                    indices.push_back(vertexOffset + 1);
+                    indices.push_back(vertexOffset + 2);
+                    indices.push_back(vertexOffset + 3);
+                    vertexOffset+=4;
+
+                    lastPos = {lastPos.x + Twidth, lastPos.y};
+                }
+
+                lastPos = {position.x, lastPos.y + Theight};
+            }
+            
+        }
+
+
 
         std::vector<UIText *> textElements = u->getText();
         for (UIText* t : textElements)
@@ -233,7 +325,7 @@ void sortUiElements(SDL_GPUDevice* renderer){
             textIndices.push_back(textVertexOffset + 3);
             totalTextElements++;
             textVertexOffset+=4;
-            textDrawCalls.push_back(t->texture);
+            if(t->texture != nullptr) {textDrawCalls.push_back(t->texture);}
 
         }
     }
@@ -245,8 +337,8 @@ void sortUiElements(SDL_GPUDevice* renderer){
     SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
 
     //elementos
-    size_t maxVerts = UIElements.size() * 4 * sizeof(UI_Vertex);
-    size_t maxInds  = UIElements.size() * 6  * sizeof(int);
+    size_t maxVerts = vertices.size() * sizeof(UI_Vertex);
+    size_t maxInds  = indices.size() * sizeof(int);
     Uint32 totalSize = (Uint32)(maxVerts + maxInds);
 
     SDL_GPUTransferBufferCreateInfo tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)totalSize };
@@ -272,32 +364,35 @@ void sortUiElements(SDL_GPUDevice* renderer){
     SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
 
     //texto
-    maxVerts = totalTextElements * 4 * sizeof(Text_Vertex);
-    maxInds  = totalTextElements * 6  * sizeof(int);
-    totalSize = (Uint32)(maxVerts + maxInds);
 
-    tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)totalSize };
-    tbuf = SDL_CreateGPUTransferBuffer(renderer, &tbufInfo);
+    if(totalTextElements > 0){
+        maxVerts = totalTextElements * 4 * sizeof(Text_Vertex);
+        maxInds  = totalTextElements * 6  * sizeof(int);
+        totalSize = (Uint32)(maxVerts + maxInds);
 
-    buffPtr = (Uint8*)SDL_MapGPUTransferBuffer(renderer, tbuf, false);
+        tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)totalSize };
+        tbuf = SDL_CreateGPUTransferBuffer(renderer, &tbufInfo);
 
-    vertSize = textVertices.size() * sizeof(Text_Vertex);
-    indexSize = textIndices.size() * sizeof(int);
-    if(vertSize > 0){
-        memcpy(buffPtr + 0, textVertices.data(), vertSize);
+        buffPtr = (Uint8*)SDL_MapGPUTransferBuffer(renderer, tbuf, false);
+
+        vertSize = textVertices.size() * sizeof(Text_Vertex);
+        indexSize = textIndices.size() * sizeof(int);
+        if(vertSize > 0){
+            memcpy(buffPtr + 0, textVertices.data(), vertSize);
+        }
+        if(indexSize > 0){
+            memcpy((Uint8*)buffPtr + vertSize, textIndices.data(), indexSize);
+        }
+        vertSrc = { tbuf, 0 };
+        vertDst = { textVBuf,  0, (Uint32)vertSize};
+        indexSrc = { tbuf, (Uint32)vertSize };
+        indexDst = { textIBuf,  0, (Uint32)indexSize};
+
+        SDL_UnmapGPUTransferBuffer(renderer, tbuf);
+        SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
+        SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
+        SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
     }
-    if(indexSize > 0){
-        memcpy((Uint8*)buffPtr + vertSize, textIndices.data(), indexSize);
-    }
-    vertSrc = { tbuf, 0 };
-    vertDst = { textVBuf,  0, (Uint32)vertSize};
-    indexSrc = { tbuf, (Uint32)vertSize };
-    indexDst = { textIBuf,  0, (Uint32)indexSize};
-
-    SDL_UnmapGPUTransferBuffer(renderer, tbuf);
-    SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
-    SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
-    SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
 
     SDL_EndGPUCopyPass(copyPass);
     SDL_SubmitGPUCommandBuffer(cmd);

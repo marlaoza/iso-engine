@@ -71,12 +71,18 @@ SDL_GPUBuffer* textIBuf;
 int TextIndexSize = 0;
 
 SDL_GPUTexture* createTextTexture(const char* text, SDL_FColor color, TTF_Font* font, int* width, int* height, int maxWidth){
-
+    
     SDL_Color col = {
         (Uint8)(color.r * 255), (Uint8)(color.g * 255),
         (Uint8)(color.b * 255), (Uint8)(color.a * 255)
     };
     SDL_Surface* surface = TTF_RenderText_Blended_Wrapped(font, text, 0, col, maxWidth);
+
+    if(!surface){
+        if(width) *width = 0;
+        if(height) * height = 0;
+        return nullptr;
+    }
 
     SDL_GPUTextureCreateInfo texInfo = {};
     texInfo.type = SDL_GPU_TEXTURETYPE_2D;
@@ -132,6 +138,10 @@ SDL_GPUTexture* createTextTexture(const char* text, SDL_FColor color, TTF_Font* 
 SDL_GPUShader* loadShader(SDL_GPUDevice* device, const char* fileName, SDL_GPUShaderStage stage, Uint32 samplers) {
     size_t size;
     void* code = SDL_LoadFile(fileName, &size); 
+    if (!code) {
+        SDL_Log("Failed to load shader %s: %s", fileName, SDL_GetError());
+        return NULL;
+    }
     
     SDL_GPUShaderCreateInfo info = {
         .code_size = size,
@@ -479,7 +489,6 @@ void createUIPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     attributes[7].offset = (sizeof(float) * 8) + (sizeof(int) * 8);
 
 
-
     pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/ui/vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
     pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/ui/fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
 
@@ -646,18 +655,6 @@ void loadUISpriteSheet(SDL_GPUDevice* renderer, const char* path){
     textUiSampler = SDL_CreateGPUSampler(renderer, &textSamplerInfo);
 }
 
-int UITextureMap[9][4] = {
-     {0, 0, 53, 27} // botao esq on
-    ,{65, 0, 29, 39} //botao dir on
-    ,{129, 0, 45, 40} //skill box
-    ,{0, 64, 53, 27} //botao esq off
-    ,{65, 64, 29, 39} //botao dir off
-    ,{129, 64, 64, 32} //unit bar segment
-    ,{193, 64, 14, 32} //unit bar end
-    ,{0, 129, 192, 97} //selectedUnit
-    //{193, 0, 64, 64} //empty
-};
-
 void render(SDL_GPUDevice* renderer, SDL_Window* window){
     if(renderer == NULL){return;}
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
@@ -739,7 +736,7 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
             int i = 0;
             for (SDL_GPUTexture* t: textDrawCalls)
             {
-               if(!t) { SDL_Log("null texture in textDrawCalls!"); i++; continue; }
+                if(!t) {continue;}
                 SDL_GPUTextureSamplerBinding bind = { t, textUiSampler };
                 SDL_BindGPUFragmentSamplers(uiPass, 0, &bind, 1);
                 SDL_DrawGPUIndexedPrimitives(uiPass, 6, 1, i*6, 0, 0);
@@ -777,6 +774,8 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     createEntityPipeline(renderer, window);
     loadUnitSheet(renderer, "src/assets/unit_sprites/base_idle.png", 0);
 
+    loadUISpriteSheet(renderer, "src/assets/ui.png");
+    
     createUIPipeline(renderer, window);
     createTextPipeline(renderer, window);
 
@@ -815,7 +814,6 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     textVBuf = SDL_CreateGPUBuffer(renderer, &textVInfo);
     textIBuf = SDL_CreateGPUBuffer(renderer, &textIInfo);
 
-    loadUISpriteSheet(renderer, "src/assets/ui.png");
     
 
     return renderer;

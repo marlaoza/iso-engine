@@ -84,8 +84,6 @@ extern SDL_GPUSampler* uiSampler;
 
 void loadUISpriteSheet(SDL_GPUDevice* renderer, const char* path);
 
-extern int UITextureMap[9][4];
-
 extern SDL_GPUBuffer* tileVBuf;
 extern SDL_GPUBuffer* tileIBuf;
 extern int tileIndexSize;

@@ -76,7 +76,7 @@ void Unit::desselect(){
 }
 
 void Unit::hoverSkill(int skillId){
-    if(this->state == UnitState::Casting || this->state == UnitState::Moving) return;
+    if(this->state == UnitState::Casting || this->state == UnitState::Moving || this->skills.size() <= 0) return;
     Skill* skill = this->skills[skillId];
     
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);
@@ -100,7 +100,7 @@ void Unit::offHoverSkill(int skillId){
 }
 
 void Unit::selectSkill(int skillId){
-    if(this->state == UnitState::Casting || this->state == UnitState::Moving) return;
+    if(this->state == UnitState::Casting || this->state == UnitState::Moving || this->skills.size() <= 0) return;
     Skill* skill = this->skills[skillId];
 
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);    

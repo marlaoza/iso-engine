@@ -1,0 +1,38 @@
+#pragma once
+#include "SDL_rect.h"
+
+struct Texture {
+    SDL_Point pos;
+    int width, height;
+};
+
+enum class SpriteType{
+    Default,
+    Sliced
+};
+
+struct Sprite {
+    SpriteType type;
+
+    Texture c;
+
+    Texture 
+    tl, tc, tr, 
+    cl,     cr, 
+    bl, bc, br;
+};
+
+
+extern Sprite empty;
+//UI Sprites
+extern Sprite unitOverlay;
+extern Sprite unitOverlayTail;
+
+extern Sprite unitButtonLeft;
+extern Sprite unitButtonLeftHL;
+
+extern Sprite unitButtonRight;
+extern Sprite unitButtonRightHL;
+
+extern Sprite skillButton;
+extern Sprite skillButtonHL;

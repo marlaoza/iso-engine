@@ -37,7 +37,10 @@ VSOutput main(VSInput input) {
     output.uv = input.uv;
     output.col = input.col;
 
-   
+    if(input.state == 4){
+        output.col = float4(0.0, 0.0, 0.0, 0.0);
+    }
+
 
     return output;
 }
