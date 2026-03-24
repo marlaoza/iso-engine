@@ -12,7 +12,6 @@ enum class UIState {
     Hovered, //1
     Selected, //2
     Disabled, //3
-    Hidden //4
 };
 
 struct UIText {
@@ -20,6 +19,7 @@ struct UIText {
     char* content;
     SDL_FPoint position;
     SDL_FColor color;
+    int maxWidth;
     SDL_GPUTexture* texture = nullptr;
     int width, height;
     char* font;        
@@ -64,6 +64,9 @@ class UIElement {
         int getHeight();
         int getId();
 
+        bool isVisible();
+        void setVisible(bool value);
+
 
     private:
         std::vector<UIText*> text;
@@ -74,6 +77,7 @@ class UIElement {
         Sprite sprite;
         Sprite hlSprite;
         SDL_FColor tint;
+        bool visible;
         };
 
 extern std::vector<UIElement*> UIElements;

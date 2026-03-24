@@ -80,7 +80,7 @@ void findSelectedUIElement(){
     for(int i = UIElements.size()-1; i >= 0; i--){
         UIElement* e = UIElements[i];
 
-        if(e->getState() != UIState::Hidden && e->getState() != UIState::Disabled && e->interactable){
+        if(e->isVisible() && e->getState() != UIState::Disabled && e->interactable){
             if(e->inBounds(MOUSE_POS)){
                 SELECTED_ELEMENT = e;
                 found = true;
@@ -159,22 +159,22 @@ void createUnitUI(){
 
 void toggleUnitUI(SDL_GPUDevice* renderer){
     if(SELECTED_UNIT == nullptr){
-        btnMove->setState(UIState::Hidden);
-        btnPass->setState(UIState::Hidden);
-        SelectedUi->setState(UIState::Hidden);
-        SelectedUiTail->setState(UIState::Hidden);
+        btnMove->setVisible(false);
+        btnPass->setVisible(false);
+        SelectedUi->setVisible(false);
+        SelectedUiTail->setVisible(false);
         for (int i = 0; i < 6; i++)
         {
-            skillButtons[i]->setState(UIState::Hidden);
+            skillButtons[i]->setVisible(false);
         } 
     }else{
-        btnMove->setState(UIState::Default);
-        btnPass->setState(UIState::Default);
-        SelectedUi->setState(UIState::Default);
-        SelectedUiTail->setState(UIState::Default);
+        btnMove->setVisible(true);
+        btnPass->setVisible(true);
+        SelectedUi->setVisible(true);
+        SelectedUiTail->setVisible(true);
         for (int i = 0; i < SELECTED_UNIT->skills.size()-1; i++)
         {
-            skillButtons[i]->setState(UIState::Default);
+            skillButtons[i]->setVisible(true);
         } 
     }
 }
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]){
     SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO);
     SDL_AddEventWatch(watcher,NULL);
 
-    window = SDL_CreateWindow("test", WIDTH, HEIGHT, SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE);
+    window = SDL_CreateWindow("test", WIDTH, HEIGHT, SDL_WINDOW_HIGH_PIXEL_DENSITY );
     if(window == NULL){
         std::cout << "Não foi possivel inicializar janela: " << SDL_GetError() << std::endl;
         return 1;
@@ -204,13 +204,52 @@ int main(int argc, char *argv[]){
     toggleUnitUI(renderer);
     sortTilePoints(renderer);
 
+    dialogManager = new DialogManager();
+    
+    std::vector<DialogLine> lines;
+    lines.push_back({"f","ola, dialogo 1"});
+    lines.push_back({"f","segunda frase"});
+    lines.push_back({"f","ultima frase"});
+
+    std::vector<DialogOption> options;
+    options.push_back({"ir ao 2","dialogo 2",1});
+    
+
+    DialogAct act = {
+        lines,
+        options
+    };
+
+    std::vector<DialogLine> lines2;
+    lines2.push_back({"f","ola, dialogo 2"});
+    lines2.push_back({"f","segunda frase"});
+    lines2.push_back({"f","ultima frase"});
+
+    std::vector<DialogOption> options2;
+    options2.push_back({"ir ao 1","dialogo 1",0});
+    options2.push_back({"sair","tchau",-1});
+    
+
+    DialogAct act2 = {
+        lines2,
+        options2
+    };
+
+    std::vector<DialogAct> play;
+    play.push_back(act);
+    play.push_back(act2);
+
+    dialogManager->set(play);
+
+    dialogManager->show();
+
     SDL_Event windowEvent;
     while(true){
         calculateDeltaTime();
 
         if(SDL_PollEvent(&windowEvent)){
             if(windowEvent.type == SDL_EVENT_QUIT){break;}
-            if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key);if(windowEvent.key.key == SDLK_E){if(dialogManager) dialogManager->advance();}}
+            if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key);}
             if(windowEvent.type == SDL_EVENT_KEY_UP){onKeyUp(windowEvent.key.key);}
             if(windowEvent.type == SDL_EVENT_MOUSE_MOTION){onMouseMotion(windowEvent.motion);}
             if(windowEvent.type == SDL_EVENT_MOUSE_WHEEL){zoomCamera(windowEvent.wheel.y);}

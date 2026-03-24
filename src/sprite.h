@@ -24,6 +24,9 @@ struct Sprite {
 
 
 extern Sprite empty;
+
+extern Sprite container;
+
 //UI Sprites
 extern Sprite unitOverlay;
 extern Sprite unitOverlayTail;
@@ -36,3 +39,13 @@ extern Sprite unitButtonRightHL;
 
 extern Sprite skillButton;
 extern Sprite skillButtonHL;
+
+extern Sprite dialogBackground;
+
+extern Sprite dialogOptionButton;
+
+extern Sprite dialogOptionButtonHL;
+
+extern Sprite dialogAdvanceButton;
+
+extern Sprite dialogAdvanceButtonHL;

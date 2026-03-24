@@ -17,5 +17,5 @@
 #define BOARD_DEPTH 10
 
 #define MAX_UNITS 30
-#define MAX_UI_ELEMENTS 30
+#define MAX_UI_ELEMENTS 900
 

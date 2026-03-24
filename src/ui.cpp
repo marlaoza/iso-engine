@@ -17,7 +17,7 @@ UIElement::UIElement(SDL_FPoint position, int width, int height, bool interactab
     this->onHover = nullptr;
     this->offHover = nullptr;
     this->sprite = sprite;
-    if(hlSprite.c.pos.x == 0 && hlSprite.c.pos.y == 0){
+    if(hlSprite.c.pos.x == 0 && hlSprite.c.pos.y == 0 && hlSprite.c.height == 0 && hlSprite.c.width == 0){
         this->hlSprite = sprite;
     }else{
         this->hlSprite = hlSprite;
@@ -51,7 +51,9 @@ bool UIElement::inBounds(SDL_FPoint point){
 
 void UIElement::addText(UIText textToAdd){
     UIText* acTxt = new UIText(textToAdd);
-    acTxt->texture = createTextTexture(acTxt->content, acTxt->color, font_main, &acTxt->width, &acTxt->height, this->width);
+    int maxWidth = acTxt->maxWidth;
+    if(maxWidth <= 0) maxWidth = this->width;
+    acTxt->texture = createTextTexture(acTxt->content, acTxt->color, font_main, &acTxt->width, &acTxt->height, maxWidth);
     SDL_GPUTextureCreateInfo info; 
     
     acTxt->id = this->text.size();
@@ -70,7 +72,9 @@ void UIElement::updateText(int id, UIText newText){
         SDL_ReleaseGPUTexture(renderer, this->text[id]->texture);
     }
 
-    this->text[id]->texture = createTextTexture(this->text[id]->content, this->text[id]->color, font_main, &this->text[id]->width, &this->text[id]->height);
+    int maxWidth = this->text[id]->maxWidth;
+    if(maxWidth <= 0) maxWidth = this->width;
+    this->text[id]->texture = createTextTexture(this->text[id]->content, this->text[id]->color, font_main, &this->text[id]->width, &this->text[id]->height, maxWidth);
 
     dirtyUi = true;
 }
@@ -86,6 +90,15 @@ void UIElement::setPosition(SDL_FPoint position){
 void UIElement::setSize(int width , int height ){
     this->height = height;
     this->width = width;
+
+    for (UIText* t : this->text)
+    {
+        int maxWidth = t->maxWidth;
+        if(maxWidth <= 0) maxWidth = this->width;
+        t->texture = createTextTexture(t->content, t->color, font_main, &t->width, &t->height, maxWidth);
+    }
+    
+
     dirtyUi = true;
 };
 void UIElement::setSprite(Sprite sprite){
@@ -101,6 +114,14 @@ void UIElement::setTint(SDL_FColor tint){
     dirtyUi = true;
 };
 
+bool UIElement::isVisible(){
+    return this->visible;
+}
+
+void UIElement::setVisible(bool value){
+    this->visible = value;
+    dirtyUi = true;
+}
 
 Sprite UIElement::getSprite() {
     return this->sprite;
@@ -139,6 +160,7 @@ void sortUiElements(SDL_GPUDevice* renderer){
     for (int i = 0; i < UIElements.size(); i++)
     { 
         UIElement* u = UIElements[i];
+        if(!u->isVisible()) {continue;}
             
         Sprite sprite = u->getSprite(); 
         Sprite HLSprite = u->getHLSprite();
@@ -197,12 +219,11 @@ void sortUiElements(SDL_GPUDevice* renderer){
 
             vertexOffset+=4;
         }else{
-            //else criar 9! quads. 
             
             int stretchWidth = width - sprite.cl.width - sprite.cr.width;
-            if(stretchWidth <= 0) sprite.c.width;
+            if(stretchWidth <= 0) stretchWidth = sprite.c.width;
             int stretchHeight = height - sprite.tr.height - sprite.br.height;
-            if(stretchHeight <= 0) sprite.c.height;
+            if(stretchHeight <= 0) stretchWidth = sprite.c.height;
 
             Texture spriteSlices[3][3] 
             = 
