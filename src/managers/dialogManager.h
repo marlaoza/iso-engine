@@ -45,11 +45,8 @@ class DialogManager{
     private:
         std::vector<DialogAct> actList;
         DialogAct curAct;
-        UIElement* actorImage;
         UIElement* dialogContainer;
         UIElement* buttonsContainer;
-        UIElement* advanceButton;
-        std::vector<UIElement*> optionButtons;
         int lineIndex;
         void selectOption(int option);
         void end();

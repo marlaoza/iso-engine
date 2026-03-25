@@ -1,11 +1,13 @@
 #pragma once
 #include <vector>
+#include <string>
 #include "SDL_rect.h"
 #include "SDL_gpu.h"
 #include "geometry.h"
 #include "render.h"
 #include "colors.h"
 #include "sprite.h"
+
 
 enum class UIState {
     Default, //0
@@ -16,7 +18,7 @@ enum class UIState {
 
 struct UIText {
     int id;
-    char* content;
+    std::string content;
     SDL_FPoint position;
     SDL_FColor color;
     int maxWidth;
@@ -27,6 +29,7 @@ struct UIText {
 
 class UIElement {       
     public:
+        int id;
         bool interactable;
         int param;
         void (*onClick)(int param);
@@ -36,13 +39,12 @@ class UIElement {
         UIElement(SDL_FPoint position, int width, int height, bool interactable, Sprite texture = empty, Sprite hlTexture = empty, int param = -1,  SDL_FColor tint = WHITE);
         ~UIElement();
 
-
         void setState(UIState state);
         void setPosition(SDL_FPoint position);
         void setSize(int width , int height );
 
-        void addText(UIText textToAdd);
-        void updateText(int id, UIText newText);
+        void setText(UIText text);
+        void setTextContent(char* content);
 
         bool inBounds(SDL_FPoint point);
 
@@ -55,22 +57,30 @@ class UIElement {
         SDL_FPoint getPosition();
         SDL_FColor getColor();
 
-        std::vector<UIText*> getText();
+        UIText getText();
 
         Sprite getSprite();
         Sprite getHLSprite();
 
         int getWidth();
         int getHeight();
-        int getId();
 
         bool isVisible();
         void setVisible(bool value);
 
+        UIElement* findSelectedChildren(SDL_FPoint point);
+
+        void setParent(UIElement* parent);
+        UIElement* getParent();
+        void addChildren(UIElement* child);
+        std::vector<UIElement*> getChildren();
+        UIElement* getChild(int id);
+
 
     private:
-        std::vector<UIText*> text;
-        int id;
+        UIElement* parent;
+        std::vector<UIElement*> children;
+        UIText text;
         SDL_FPoint position;
         int height, width;
         UIState state;
@@ -78,10 +88,11 @@ class UIElement {
         Sprite hlSprite;
         SDL_FColor tint;
         bool visible;
-        };
+};
 
 extern std::vector<UIElement*> UIElements;
 extern bool dirtyUi;
 
 void sortUiElements(SDL_GPUDevice* renderer);
 
+void registerElement(UIElement* element);

@@ -65,11 +65,7 @@ void findSelectedTile(){
 
 UIElement* SELECTED_ELEMENT;
 
-UIElement* SelectedUi;
-UIElement* SelectedUiTail;
-UIElement* btnMove;
-UIElement* btnPass;
-UIElement* skillButtons[6];
+UIElement* SelectedUnitUI;
 
 void findSelectedUIElement(){
     UIElement* LAST_ELEMENT = SELECTED_ELEMENT;
@@ -80,11 +76,14 @@ void findSelectedUIElement(){
     for(int i = UIElements.size()-1; i >= 0; i--){
         UIElement* e = UIElements[i];
 
-        if(e->isVisible() && e->getState() != UIState::Disabled && e->interactable){
+        if(e->isVisible() && e->getState() != UIState::Disabled){
             if(e->inBounds(MOUSE_POS)){
-                SELECTED_ELEMENT = e;
-                found = true;
-                break;;
+                UIElement* hovered = e->findSelectedChildren(MOUSE_POS);
+                if(hovered != nullptr){
+                    SELECTED_ELEMENT = hovered;
+                    found = true;
+                    break;
+                }
             }
         }
         
@@ -105,18 +104,18 @@ void findSelectedUIElement(){
 }
 
 void createUnitUI(){
-    SelectedUi = new UIElement({10, 250}, 194, 100, false, unitOverlay);
-    SelectedUiTail = new UIElement({200, 287}, 40, 37, false, unitOverlayTail);
+    SelectedUnitUI = new UIElement({10, 250}, 250, 100, false);
+    UIElement* selectedUiHead = new UIElement({10, 250}, 194, 100, false, unitOverlay);
+    UIElement* selectedUiTail = new UIElement({200, 287}, 40, 37, false, unitOverlayTail);
 
-    btnMove = new UIElement({105, 295}, 53, 27, true, unitButtonLeft, unitButtonLeftHL, 0);
-    btnPass = new UIElement({132, 296}, 29, 39, true, unitButtonRight, unitButtonRightHL, 0);
-    // UIText t = {
-    //     0,
-    //     "mover",
-    //     {0, 0},
-    //     WHITE,
-    // };
-    // btnMove->addText(t);
+    SelectedUnitUI->addChildren(selectedUiHead);
+    SelectedUnitUI->addChildren(selectedUiTail);
+
+    UIElement* btnMove = new UIElement({105, 295}, 53, 27, true, unitButtonLeft, unitButtonLeftHL, 0);
+    UIElement* btnPass = new UIElement({132, 296}, 29, 39, true, unitButtonRight, unitButtonRightHL, 0);
+
+    SelectedUnitUI->addChildren(btnMove);
+    SelectedUnitUI->addChildren(btnPass);
 
     btnMove->onClick = [](int param){
         if(SELECTED_UNIT != nullptr){
@@ -133,50 +132,38 @@ void createUnitUI(){
             SELECTED_UNIT->offHoverSkill(param);
         }
     };
+
     float x = 170.0f;
     for (int i = 0; i < 6; i++)
     {
-        skillButtons[i] = new UIElement({x, 270}, 45, 40, true, skillButton, skillButtonHL, i+1);
-        skillButtons[i]->onClick = [](int param){
+        UIElement* skillButtonElement = new UIElement({x, 270}, 45, 40, true, skillButton, skillButtonHL, i+1);
+        skillButtonElement->onClick = [](int param){
             if(SELECTED_UNIT != nullptr){
                 SELECTED_UNIT->selectSkill(param);
             }
         };
-        skillButtons[i]->onHover = [](int param){
+        skillButtonElement->onHover = [](int param){
             if(SELECTED_UNIT != nullptr){
                 SELECTED_UNIT->hoverSkill(param);
             }
         };
-        skillButtons[i]->offHover = [](int param){
+        skillButtonElement->offHover = [](int param){
             if(SELECTED_UNIT != nullptr){
                 SELECTED_UNIT->offHoverSkill(param);
             }
         };
         x+= 47.0f;
+        SelectedUnitUI->addChildren(skillButtonElement);
     }
+
+    registerElement(SelectedUnitUI);
+
     
 };
 
 void toggleUnitUI(SDL_GPUDevice* renderer){
-    if(SELECTED_UNIT == nullptr){
-        btnMove->setVisible(false);
-        btnPass->setVisible(false);
-        SelectedUi->setVisible(false);
-        SelectedUiTail->setVisible(false);
-        for (int i = 0; i < 6; i++)
-        {
-            skillButtons[i]->setVisible(false);
-        } 
-    }else{
-        btnMove->setVisible(true);
-        btnPass->setVisible(true);
-        SelectedUi->setVisible(true);
-        SelectedUiTail->setVisible(true);
-        for (int i = 0; i < SELECTED_UNIT->skills.size()-1; i++)
-        {
-            skillButtons[i]->setVisible(true);
-        } 
-    }
+    if(SELECTED_UNIT == nullptr){SelectedUnitUI->setVisible(false);}
+    else{SelectedUnitUI->setVisible(true);}
 }
 
 int main(int argc, char *argv[]){

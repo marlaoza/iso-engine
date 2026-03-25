@@ -3,6 +3,8 @@
 DialogManager* dialogManager;
 
 DialogManager::DialogManager(){
+    this->state = State::Inactive;
+
     this->dialogContainer = new UIElement({71, 240}, 527, 71, false, dialogBackground);
     UIText t = {
         0,
@@ -11,18 +13,16 @@ DialogManager::DialogManager(){
         RED,
         481
     };
-    this->dialogContainer->addText(t);
-    this->dialogContainer->setVisible(false);
+    this->dialogContainer->setText(t);
 
-    this->advanceButton = new UIElement({575, 288}, 23, 23, true, dialogAdvanceButton, dialogAdvanceButtonHL);
-    this->advanceButton->onClick = [](int param){
+    UIElement* advanceButton = new UIElement({575, 288}, 23, 23, true, dialogAdvanceButton, dialogAdvanceButtonHL);
+    advanceButton->onClick = [](int param){
         if(dialogManager != nullptr){dialogManager->advance();}
     };
-    this->advanceButton->setVisible(false);
-    this->state = State::Inactive;
+    this->dialogContainer->addChildren(advanceButton);
 
     this->buttonsContainer = new UIElement({22, 312}, 576, 40, false, container);
-    this->buttonsContainer->setVisible(false);
+    
     float x = 30.0f;
     for (int i = 0; i < 4; i++)
     {
@@ -30,12 +30,18 @@ DialogManager::DialogManager(){
         optBtn->onClick = [](int param){
             if(dialogManager != nullptr){dialogManager->selectOption(param);}
         };
-        optBtn->addText({0,"",{4, 4},RED});
+        optBtn->setText({0,"",{4, 4},RED});
         optBtn->setVisible(false);
-        this->optionButtons.push_back(optBtn);
+        this->buttonsContainer->addChildren(optBtn);
         x += 142.0f;
         
     }
+
+    registerElement(this->buttonsContainer);
+    registerElement(this->dialogContainer);
+    this->buttonsContainer->setVisible(false);
+    this->dialogContainer->setVisible(false);
+
     
 };
 
@@ -50,8 +56,7 @@ void DialogManager::show(){
     this->curAct = this->actList[0];
     this->lineIndex = 0;
     this->dialogContainer->setVisible(true);
-    this->advanceButton->setVisible(true);
-    this->dialogContainer->updateText(0, {0, this->curAct.lines[0].line, {21, 7}, RED, 481});
+    this->dialogContainer->setTextContent(this->curAct.lines[0].line);
     this->state = State::Active;
 
 };
@@ -60,12 +65,12 @@ void DialogManager::advance(){
     if(this->actList.size() <= 0) return;
 
     if((this->curAct.lines.size() == 0 || this->lineIndex >= (int)this->curAct.lines.size() - 1) && curAct.options.size() > 0){
-        this->advanceButton->setVisible(false);
+        this->dialogContainer->getChild(0)->setVisible(false);
         this->buttonsContainer->setVisible(true);
         for (int i = 0; i < this->curAct.options.size(); i++)
         {
-            this->optionButtons[i]->setVisible(true);
-            this->optionButtons[i]->updateText(0, { 0,this->curAct.options[i].title,{4, 4},RED,});
+            this->buttonsContainer->getChild(i)->setVisible(true);
+            this->buttonsContainer->getChild(i)->setTextContent(this->curAct.options[i].title);
         }
         
     }else if(this->lineIndex == (int)this->curAct.lines.size() - 1){
@@ -73,7 +78,7 @@ void DialogManager::advance(){
     }
     else{
         this->lineIndex += 1;
-        this->dialogContainer->updateText(0,{0,this->curAct.lines[lineIndex].line,{21, 7},RED,481});
+        this->dialogContainer->setTextContent(this->curAct.lines[lineIndex].line);
     }
 
 };
@@ -84,9 +89,8 @@ void DialogManager::selectOption(int option){
     else {
         this->curAct = this->actList[selectedOption.goTo];
         this->lineIndex = 0;
-        this->dialogContainer->updateText(0, {0,this->curAct.lines[0].line,{21, 7}, RED,481});
-        this->advanceButton->setVisible(true);
-        for (int i = 0; i < 4; i++){this->optionButtons[i]->setVisible(false);}
+        this->dialogContainer->setTextContent(this->curAct.lines[0].line);
+        this->dialogContainer->getChild(0)->setVisible(true);
         this->buttonsContainer->setVisible(false);
     }
 };
@@ -94,8 +98,6 @@ void DialogManager::selectOption(int option){
 void DialogManager::end(){
     SDL_Log("sair");
     this->dialogContainer->setVisible(false);
-    this->advanceButton->setVisible(false);
-    for (int i = 0; i < 4; i++) {this->optionButtons[i]->setVisible(false);}
     this->buttonsContainer->setVisible(false);
     this->state = State::Inactive;
 };
