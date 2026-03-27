@@ -20,9 +20,11 @@ struct Tile_Vertex {
 struct Entity_Vertex {
     SDL_FPoint pos;
     SDL_FPoint uv;
-    int textureIndex;
+    int sheetIndex;
+    int sheetWidth, sheetHeight;
+    int frameWidth, frameHeight;
+    int frameCount;
     int direction;
-    int state;
     int32_t gridX, gridY;
     int indexOffset;
 };
@@ -107,3 +109,8 @@ extern int TextIndexSize;
 void render(SDL_GPUDevice* renderer, SDL_Window* window);
 SDL_GPUDevice* createRenderer(SDL_Window* window);
 void destroyRenderer(SDL_GPUDevice* renderer);
+
+
+extern int unitSheetCount;
+
+int loadUnitSheet(const char* path);

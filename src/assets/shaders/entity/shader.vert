@@ -15,23 +15,26 @@ cbuffer SceneData : register(b0) {
 };
 
 struct VSInput {
-    float2 pos : POSITION;
+    float2 pos: POSITION;
     float2 uv: TEXCOORD0;
     int texIndex: TEXCOORD1;
-    int direction: TEXCOORD2;
-    int state: TEXCOORD3;
-    int2 gridPos : TEXCOORD5;
-    int indexOffset: TEXCOORD6; 
+    int2 sheetSize: TEXCOORD2;
+    int2 frameSize: TEXCOORD3;
+    int frameCount: TEXCOORD4;
+    int direction: TEXCOORD5;
+    int2 gridPos: TEXCOORD6;
+    int indexOffset: TEXCOORD7; 
 
 };
 
 struct VSOutput {
-    float4 pos : SV_POSITION;
+    float4 pos: SV_POSITION;
     float2 uv: TEXCOORD0;
     int texIndex: TEXCOORD1;
-    int direction: TEXCOORD2;
-    int state: TEXCOORD3;
-    int frame: TEXCOORD4;
+    int2 sheetSize: TEXCOORD2;
+    int2 frameSize: TEXCOORD3;
+    int direction: TEXCOORD5;
+    int frame: TEXCOORD6;
 
 };
 
@@ -54,10 +57,12 @@ VSOutput main(VSInput input) {
                         1.0 - depth, 1.0);
 
     output.texIndex = input.texIndex;
+    output.sheetSize = input.sheetSize;
+    output.frameSize = input.frameSize;
+
     output.uv = input.uv;
     output.direction = input.direction;
-    output.state = input.state;
-    output.frame = frameTime % 3;
+    output.frame = frameTime % input.frameCount;
 
     return output;
 }

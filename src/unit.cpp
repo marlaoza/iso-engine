@@ -13,18 +13,20 @@
 
 bool dirtyUnits = false;
 
- Unit::Unit(char name[32], SDL_Point gridPos, int height, int width, int maxHp, int maxSpeed) {
+ Unit::Unit(char name[32], SDL_Point gridPos, UnitData* uData) {
     this->id = units.size();
     memcpy(this->name,name, 32*sizeof(char));
     this->gridOffset = {0, 0};
     this->gridPos = gridPos;
-    this->height = height;
-    this->width = width;
-    this->maxHp = maxHp;
-    this->currentHp = maxHp;
-    this->maxSpeed = maxSpeed;
-    this->currentSpeed = maxSpeed;
-    this->shield = 0;
+    this->height = uData->baseHeight;
+    this->width = uData->baseWidth;
+    this->maxHp = uData->baseHP;
+    this->currentHp = this->maxHp;
+    this->maxSpeed = uData->baseSpeed;
+    this->currentSpeed = this->maxSpeed;
+    this->shield = uData->baseShield;
+    this->animations = uData->animations;
+    this->expressionSheet = uData->expressionSheet;
     this->state = UnitState::Idle;
     this->direction = Direction::Down;
     this->selectedSkill = -1;
@@ -294,6 +296,10 @@ void Unit::setTile(SDL_Point target){
     this->gridPos = target;
 };
 
+Animation* Unit::getCurrentAnimation(){
+    return this->animations["idle"];
+}
+
 Unit* SELECTED_UNIT;
 Unit* HOVERED_UNIT;
 
@@ -346,12 +352,17 @@ void sortUnits(SDL_GPUDevice* renderer){
             if(u->gridPos.y > u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/1.5f){indexSum = -1;}}
         }
 
-      
-        vertices.push_back({points_p[0], {0.0f, 0.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y, indexSum});
-        vertices.push_back({points_p[1], {1.0f, 0.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y, indexSum});
-        vertices.push_back({points_p[2], {0.0f, 1.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y, indexSum});
-        vertices.push_back({points_p[3], {1.0f, 1.0f}, 0, (int)u->direction, 0, u->gridPos.x + u->gridPos.y, indexSum});
 
+        //pegar da animatiooon
+        Animation* anim = u->getCurrentAnimation();
+
+        SDL_FPoint UVS[4] = {
+            {0.0f, 0.0f},{1.0f, 0.0f},
+            {0.0f, 1.0f},{1.0f, 1.0f}
+        };
+
+        for (int i = 0; i < 4; i++){vertices.push_back({points_p[i], UVS[i], anim->sheet->id, anim->sheet->width, anim->sheet->height, anim->frameWidth, anim->frameHeight, anim->frames, (int)u->direction, u->gridPos.x + u->gridPos.y, indexSum});}
+        
         indices.push_back(vertexOffset);
         indices.push_back(vertexOffset + 1);
         indices.push_back(vertexOffset + 2);

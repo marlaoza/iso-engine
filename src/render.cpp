@@ -229,7 +229,7 @@ void createPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
 
     pipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
     if (pipeline == NULL) {
-        SDL_Log("Pipeline creation failed: %s", SDL_GetError());
+        SDL_Log("Tile Pipeline creation failed: %s", SDL_GetError());
     }
 
 }
@@ -267,8 +267,8 @@ void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
         .pitch = sizeof(Highlight_Vertex),
         .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
         .instance_step_rate = 0,
-    }
-    };
+    }};
+
     pipelineInfo.vertex_input_state.vertex_attributes = attributes;
     pipelineInfo.vertex_input_state.num_vertex_attributes = 4;
 
@@ -296,9 +296,7 @@ void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     pipelineInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT;
 
     highLightPipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
-    if (highLightPipeline == NULL) {
-        SDL_Log("Pipeline creation failed: %s", SDL_GetError());
-    }
+    if (highLightPipeline == NULL) {SDL_Log("Highlight Pipeline creation failed: %s", SDL_GetError());}
 
 }
 
@@ -307,45 +305,55 @@ SDL_GPUSampler* unitSampler;
 void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window)
 {
     SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
-    SDL_GPUVertexAttribute attributes[7];
+    SDL_GPUVertexAttribute attributes[9];
 
     attributes[0].location = 0;
     attributes[0].buffer_slot = 0;
-    attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+    attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;  //POS
     attributes[0].offset = 0;
 
     attributes[1].location = 1;
     attributes[1].buffer_slot = 0;
-    attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
-    attributes[1].offset = sizeof(float) * 2;
+    attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;  //UV
+    attributes[1].offset = (sizeof(float)*2);
 
     attributes[2].location = 2;
     attributes[2].buffer_slot = 0;
-    attributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
-    attributes[2].offset = sizeof(float) * 4;
+    attributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;     //SHEET INDEX
+    attributes[2].offset = (sizeof(float)*4);
 
     attributes[3].location = 3;
     attributes[3].buffer_slot = 0;
-    attributes[3].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
-    attributes[3].offset = sizeof(float) * 4 + sizeof(int);
+    attributes[3].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;    //SHEET SIZE
+    attributes[3].offset = (sizeof(float)*4) + (sizeof(int));
 
     attributes[4].location = 4;
     attributes[4].buffer_slot = 0;
-    attributes[4].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
-    attributes[4].offset = sizeof(float) * 4 + sizeof(int) * 2;
+    attributes[4].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;    //FRAME SIZE
+    attributes[4].offset = (sizeof(float)*4) + (sizeof(int)*3);
 
     attributes[5].location = 5;
     attributes[5].buffer_slot = 0;
-    attributes[5].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;
-    attributes[5].offset = sizeof(float) * 4 + sizeof(int) * 3;
+    attributes[5].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;     //FRAME COUNT
+    attributes[5].offset = (sizeof(float)*4) + (sizeof(int)*5);
 
     attributes[6].location = 6;
     attributes[6].buffer_slot = 0;
-    attributes[6].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
-    attributes[6].offset = sizeof(float) * 4 + sizeof(int) * 5;
+    attributes[6].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;     //DIRECTION
+    attributes[6].offset = (sizeof(float)*4) + (sizeof(int)*6);
 
-    pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/entity/vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
-    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/entity/fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
+    attributes[7].location = 7;
+    attributes[7].buffer_slot = 0;
+    attributes[7].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;    //GRID POS
+    attributes[7].offset = (sizeof(float)*4) + (sizeof(int)*7);
+
+    attributes[8].location = 8;
+    attributes[8].buffer_slot = 0;
+    attributes[8].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;     //INDEX OFFSET
+    attributes[8].offset = (sizeof(float)*4) + (sizeof(int)*8);
+
+    pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/entity/vertShader", SDL_GPU_SHADERSTAGE_VERTEX, 0);
+    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/entity/fragShader", SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
 
     pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
     pipelineInfo.vertex_input_state.vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[]){{
@@ -355,8 +363,9 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window)
         .instance_step_rate = 0,
     }
     };
+
     pipelineInfo.vertex_input_state.vertex_attributes = attributes;
-    pipelineInfo.vertex_input_state.num_vertex_attributes = 7;
+    pipelineInfo.vertex_input_state.num_vertex_attributes = 9;
 
     pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 
@@ -381,12 +390,8 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window)
     pipelineInfo.target_info.has_depth_stencil_target = true;
     pipelineInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT;
 
-
     entityPipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
-    if (entityPipeline == NULL) {
-        SDL_Log("Pipeline creation failed: %s", SDL_GetError());
-    }
-
+    if (entityPipeline == NULL) {SDL_Log("Entity Pipeline creation failed: %s", SDL_GetError());}
 
     SDL_GPUTextureCreateInfo texInfo = {};
     texInfo.type = SDL_GPU_TEXTURETYPE_2D_ARRAY;
@@ -407,7 +412,9 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window)
     unitSampler = SDL_CreateGPUSampler(renderer, &samplerInfo);
 }
 
-void loadUnitSheet(SDL_GPUDevice* renderer, const char* path, int slice){
+int unitSheetCount = 0;
+
+int loadUnitSheet(const char* path){
     int w, h, channels;
     unsigned char* pixels = stbi_load(path, &w, &h, &channels, 4);
     
@@ -430,7 +437,7 @@ void loadUnitSheet(SDL_GPUDevice* renderer, const char* path, int slice){
 
     SDL_GPUTextureRegion dst = {};
     dst.texture = unitTextureArray;
-    dst.layer = slice;
+    dst.layer = unitSheetCount;
     dst.w = (Uint32)w;
     dst.h = (Uint32)h;
     dst.d = 1;
@@ -439,6 +446,9 @@ void loadUnitSheet(SDL_GPUDevice* renderer, const char* path, int slice){
     SDL_EndGPUCopyPass(copyPass);
     SDL_SubmitGPUCommandBuffer(cmd);
     SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
+
+    unitSheetCount++;
+    return unitSheetCount - 1;
 
 
 }
@@ -521,7 +531,7 @@ void createUIPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
 
     UIPipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
     if (UIPipeline == NULL) {
-        SDL_Log("Pipeline creation failed: %s", SDL_GetError());
+        SDL_Log("UI Pipeline creation failed: %s", SDL_GetError());
     }
 }
 
@@ -583,7 +593,7 @@ void createTextPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
 
     textPipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
     if (textPipeline == NULL) {
-        SDL_Log("Pipeline creation failed: %s", SDL_GetError());
+        SDL_Log("Text Pipeline creation failed: %s", SDL_GetError());
     }
 }
 
@@ -772,7 +782,7 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     createPipeline(renderer, window);
     createHighLightPipeline(renderer,window);
     createEntityPipeline(renderer, window);
-    loadUnitSheet(renderer, "src/assets/unit_sprites/base_idle.png", 0);
+    loadUnitSheet("src/assets/unit_sprites/base_idle.png");
 
     loadUISpriteSheet(renderer, "src/assets/ui.png");
     

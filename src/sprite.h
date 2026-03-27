@@ -1,6 +1,19 @@
 #pragma once
 #include "SDL_rect.h"
 
+
+struct SpriteSheet {
+    int id;
+    const char* path;
+    int width, height;
+};
+struct Animation {
+    SpriteSheet* sheet;
+    int frames;
+    int frameWidth, frameHeight;
+};
+
+
 struct Texture {
     SDL_Point pos;
     int width, height;

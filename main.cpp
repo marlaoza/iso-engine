@@ -166,6 +166,34 @@ void toggleUnitUI(SDL_GPUDevice* renderer){
     else{SelectedUnitUI->setVisible(true);}
 }
 
+
+UnitData* test;
+
+void createUnitPrefabs(){
+    SpriteSheet* testIdleSheet = new SpriteSheet{
+        0,
+        "src/assets/unit_sprites/base_idle.png",
+        144, 144
+    };
+
+    testIdleSheet->id = loadUnitSheet(testIdleSheet->path);
+
+    Animation* testIdle = new Animation{
+        testIdleSheet,
+        3,
+        18,
+        48,
+    };
+    std::map<std::string, Animation*> testAnimations;
+    testAnimations["idle"] = testIdle;
+
+    test = new UnitData{
+        testAnimations,
+        nullptr
+        ,28, 5, 10, 3, 0
+    };
+}
+
 int main(int argc, char *argv[]){
     SDL_Window *window = NULL;
     SDL_GPUDevice *renderer = NULL;
@@ -185,6 +213,7 @@ int main(int argc, char *argv[]){
     if(renderer == NULL){
         return 1;
     }
+    createUnitPrefabs();
 
     createUnitUI();
 
@@ -273,7 +302,7 @@ int main(int argc, char *argv[]){
                         else {SELECTED_UNIT->desselect();toggleUnitUI(renderer);}
                     }
                     else if(SELECTED_TILE.x >= 0 && SELECTED_TILE.y >= 0 && !unitMap[SELECTED_TILE.y * BOARD_WIDTH + SELECTED_TILE.x]){
-                        new Unit("carinha", SELECTED_TILE, 28, 5, 10, 3);
+                        new Unit("carinha", SELECTED_TILE, test);
                     }
                     
                 }
