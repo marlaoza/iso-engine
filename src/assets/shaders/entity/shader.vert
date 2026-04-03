@@ -18,12 +18,11 @@ struct VSInput {
     float2 pos: POSITION;
     float2 uv: TEXCOORD0;
     int texIndex: TEXCOORD1;
-    int2 sheetSize: TEXCOORD2;
-    int2 frameSize: TEXCOORD3;
-    int frameCount: TEXCOORD4;
-    int direction: TEXCOORD5;
-    int2 gridPos: TEXCOORD6;
-    int indexOffset: TEXCOORD7; 
+    int2 frameSize: TEXCOORD2;
+    int frameCount: TEXCOORD3;
+    int direction: TEXCOORD4;
+    int2 gridPos: TEXCOORD5;
+    int indexOffset: TEXCOORD6; 
 
 };
 
@@ -31,10 +30,9 @@ struct VSOutput {
     float4 pos: SV_POSITION;
     float2 uv: TEXCOORD0;
     int texIndex: TEXCOORD1;
-    int2 sheetSize: TEXCOORD2;
-    int2 frameSize: TEXCOORD3;
-    int direction: TEXCOORD5;
-    int frame: TEXCOORD6;
+    int2 frameSize: TEXCOORD2;
+    int direction: TEXCOORD3;
+    int frame: TEXCOORD4;
 
 };
 
@@ -57,7 +55,6 @@ VSOutput main(VSInput input) {
                         1.0 - depth, 1.0);
 
     output.texIndex = input.texIndex;
-    output.sheetSize = input.sheetSize;
     output.frameSize = input.frameSize;
 
     output.uv = input.uv;

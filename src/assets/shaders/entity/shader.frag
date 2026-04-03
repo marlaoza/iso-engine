@@ -7,30 +7,21 @@ struct PSInput {
     float4 pos : SV_POSITION;
     float2 uv: TEXCOORD0;
     int texIndex: TEXCOORD1;
-    int2 sheetSize: TEXCOORD2;
-    int2 frameSize: TEXCOORD3;
-    int direction: TEXCOORD5;
-    int frame: TEXCOORD6;
+    int2 frameSize: TEXCOORD2;
+    int direction: TEXCOORD3;
+    int frame: TEXCOORD4;
 };
 
 float4 main(PSInput input) : SV_Target {
+    int2 pixelCoords = int2(
+        (input.direction * input.frameSize.x) + (input.uv.x * (input.frameSize.x - 0.001)),
+        (input.frame * input.frameSize.y) + (input.uv.y * (input.frameSize.y - 0.001))
+    );
+    float4 texColor = unitTextures.Load(int4(pixelCoords.x, pixelCoords.y, input.texIndex, 0));
+
     float2 texturePos = float2((float)input.direction * (float)input.frameSize.x, (float)input.frame * (float)input.frameSize.y);
 
-    float atlasW = (float)input.sheetSize.x;
-    float atlasH = (float)input.sheetSize.y;
-
-    float2 pixelPos = float2(
-        texturePos.x + (input.uv.x * (float)input.frameSize.x),
-        texturePos.y + (input.uv.y * (float)input.frameSize.y)
-    );
-
-    float2 normalizedUV = float2(pixelPos.x / atlasW, pixelPos.y / atlasH);
-
-    float4 texColor = unitTextures.Sample(unitSampler, float3(normalizedUV, (float)input.texIndex));
-
-    if (texColor.a < 0.1) {
-        discard;
-    }
+    if (texColor.a < 0.1) {discard;}
 
     return texColor;
 

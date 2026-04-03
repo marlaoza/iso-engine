@@ -161,9 +161,10 @@ void Unit::calculatePreview(SDL_Point selectedTile){
 
     for (SDL_Point p : this->reachMap){addHighlight(p, 1+s->highlightPallete, s->highlightPallete);}
 
-    if(s->origin == SkillOrigin::Self){
-        origin = this->gridPos;
-    }
+    Unit* targetOrigin = unitMap[selectedTile.y * BOARD_WIDTH + selectedTile.x];
+
+    if(s->origin == SkillOrigin::Unit && targetOrigin == nullptr){ return;}
+    if(s->origin == SkillOrigin::Caster){origin = this->gridPos;}
 
     for (SkillEffect& e : s->effects)
     {
@@ -180,8 +181,8 @@ void Unit::calculatePreview(SDL_Point selectedTile){
             std::vector<SDL_Point> actionLine;
 
             if (e.type == EffectType::Pathfind) {
-                if (e.target == EffectTarget::Self) {
-                    actionLine = getPath(this->gridPos, selectedTile, range2);
+                if (e.target == EffectTarget::Caster) {
+                    actionLine = getPath(origin, selectedTile, range2);
                 } 
                 else if (e.target == EffectTarget::Unit && pTarget != nullptr) {
                     actionLine = getPath(pTarget->gridPos, this->gridPos, range2);
@@ -296,9 +297,23 @@ void Unit::setTile(SDL_Point target){
     this->gridPos = target;
 };
 
+void Unit::playClip(std::string clipName){
+    this->currentClip = this->animations[clipName];
+    this->clipStartFrame = FRAME_TIME;
+}
+
+int Unit::getClipStartFrame(){return this->clipStartFrame;}
+
 Animation* Unit::getCurrentAnimation(){
+    if(this->currentClip != nullptr){return this->currentClip;}
+
+    if(this->state == UnitState::Moving){return this->animations["idle"];}
+    if(this->state == UnitState::Casting){return this->animations["idle"];}
+    
     return this->animations["idle"];
 }
+
+
 
 Unit* SELECTED_UNIT;
 Unit* HOVERED_UNIT;
@@ -352,8 +367,6 @@ void sortUnits(SDL_GPUDevice* renderer){
             if(u->gridPos.y > u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/1.5f){indexSum = -1;}}
         }
 
-
-        //pegar da animatiooon
         Animation* anim = u->getCurrentAnimation();
 
         SDL_FPoint UVS[4] = {
@@ -361,7 +374,7 @@ void sortUnits(SDL_GPUDevice* renderer){
             {0.0f, 1.0f},{1.0f, 1.0f}
         };
 
-        for (int i = 0; i < 4; i++){vertices.push_back({points_p[i], UVS[i], anim->sheet->id, anim->sheet->width, anim->sheet->height, anim->frameWidth, anim->frameHeight, anim->frames, (int)u->direction, u->gridPos.x + u->gridPos.y, indexSum});}
+        for (int i = 0; i < 4; i++){vertices.push_back({points_p[i], UVS[i], anim->sheet->id, anim->frameWidth, anim->frameHeight, anim->frames, (int)u->direction, u->gridPos.x + u->gridPos.y, indexSum});}
         
         indices.push_back(vertexOffset);
         indices.push_back(vertexOffset + 1);

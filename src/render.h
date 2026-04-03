@@ -21,7 +21,6 @@ struct Entity_Vertex {
     SDL_FPoint pos;
     SDL_FPoint uv;
     int sheetIndex;
-    int sheetWidth, sheetHeight;
     int frameWidth, frameHeight;
     int frameCount;
     int direction;

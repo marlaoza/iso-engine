@@ -5,7 +5,6 @@
 struct SpriteSheet {
     int id;
     const char* path;
-    int width, height;
 };
 struct Animation {
     SpriteSheet* sheet;

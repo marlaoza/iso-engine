@@ -173,7 +173,6 @@ void createUnitPrefabs(){
     SpriteSheet* testIdleSheet = new SpriteSheet{
         0,
         "src/assets/unit_sprites/base_idle.png",
-        144, 144
     };
 
     testIdleSheet->id = loadUnitSheet(testIdleSheet->path);
@@ -219,45 +218,6 @@ int main(int argc, char *argv[]){
 
     toggleUnitUI(renderer);
     sortTilePoints(renderer);
-
-    dialogManager = new DialogManager();
-    
-    std::vector<DialogLine> lines;
-    lines.push_back({"f","ola, dialogo 1"});
-    lines.push_back({"f","segunda frase"});
-    lines.push_back({"f","ultima frase"});
-
-    std::vector<DialogOption> options;
-    options.push_back({"ir ao 2","dialogo 2",1});
-    
-
-    DialogAct act = {
-        lines,
-        options
-    };
-
-    std::vector<DialogLine> lines2;
-    lines2.push_back({"f","ola, dialogo 2"});
-    lines2.push_back({"f","segunda frase"});
-    lines2.push_back({"f","ultima frase"});
-
-    std::vector<DialogOption> options2;
-    options2.push_back({"ir ao 1","dialogo 1",0});
-    options2.push_back({"sair","tchau",-1});
-    
-
-    DialogAct act2 = {
-        lines2,
-        options2
-    };
-
-    std::vector<DialogAct> play;
-    play.push_back(act);
-    play.push_back(act2);
-
-    dialogManager->set(play);
-
-    dialogManager->show();
 
     SDL_Event windowEvent;
     while(true){
@@ -316,7 +276,14 @@ int main(int argc, char *argv[]){
             dirtyHighlights = true;
         } 
         else {findSelectedTile();}
-        for (Unit* u : units){if(u->state == UnitState::Moving) u->move();}
+        float frameCheck = FRAME_TIME;
+        for (Unit* u : units){
+            if(u->currentClip != nullptr){
+                if(frameCheck < u->getClipStartFrame()){frameCheck += 50.0f;}
+                if(frameCheck - u->getClipStartFrame() >= u->currentClip->frames){ u->currentClip = nullptr;}
+            }
+            if(u->state == UnitState::Moving) u->move();
+        }
         if(dirtyMap)sortTilePoints(renderer);
         if(dirtyHighlights)sortHighlight(renderer);
         if(dirtyUnits)sortUnits(renderer);

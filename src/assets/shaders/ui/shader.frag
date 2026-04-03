@@ -15,15 +15,12 @@ struct PSInput {
 float4 main(PSInput input) : SV_Target {
     float4 baseColor = input.col;
 
-    float atlasW = 384.0;
-    float atlasH = 192.0;
-
-    float2 atlasUV = float2(
-        (input.texturePos.x + input.uv.x * input.textureSize.x) / atlasW,
-        (input.texturePos.y + input.uv.y * input.textureSize.y) / atlasH
+    int2 pixelCoords = int2(
+        (input.texturePos.x + input.uv.x * input.textureSize.x),
+        (input.texturePos.y + input.uv.y * input.textureSize.y)
     );
+    float4 texColor = uiAtlas.Load(int4(pixelCoords.x, pixelCoords.y, 0, 0));
 
-    float4 texColor = uiAtlas.Sample(uiSampler, atlasUV);
     return texColor * baseColor.a;
 }
 
