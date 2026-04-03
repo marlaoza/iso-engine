@@ -49,7 +49,7 @@ class Unit {
         void desselect();
     
         void hoverSkill(int skillId);
-        void offHoverSkill(int skillId);
+        void offHoverSkill();
         void selectSkill(int skillId);
 
         void castSkill(int skillId);
@@ -60,12 +60,18 @@ class Unit {
 
         Animation* getCurrentAnimation();
 
+        void playClip(std::string clipName);
+        Animation* currentClip;
+        int getClipStartFrame();
+
     private:
         std::map<std::string, Animation*> animations;
         SpriteSheet* expressionSheet;
         std::vector<SDL_Point> reachMap;
         std::vector<SDL_Point> targetPool;
         int poolIndex;
+
+        int clipStartFrame;
 
         void calculateReachMap(int size, int minSize = 0);
 

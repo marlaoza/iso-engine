@@ -3,7 +3,7 @@
 #include "geometry.h"
 
 enum class EffectTarget {
-    Self,
+    Caster,
     Unit,
     Tile
 };
@@ -47,8 +47,8 @@ enum class CostType {
 };
 
 enum class SkillOrigin {
-    Self,
-    Other,
+    Caster,
+    Unit,
     Tile
 };
 

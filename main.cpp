@@ -92,14 +92,16 @@ void findSelectedUIElement(){
     if(!found) SELECTED_ELEMENT = nullptr;
 
     if(SELECTED_ELEMENT != LAST_ELEMENT){
-        if(SELECTED_ELEMENT != nullptr){
-            SELECTED_ELEMENT->setState(UIState::Hovered);
-            if(SELECTED_ELEMENT->onHover) SELECTED_ELEMENT->onHover(SELECTED_ELEMENT->param);
-        }
         if(LAST_ELEMENT != nullptr){
             LAST_ELEMENT->setState(UIState::Default);
             if(LAST_ELEMENT->offHover) LAST_ELEMENT->offHover(LAST_ELEMENT->param);
         }
+        
+        if(SELECTED_ELEMENT != nullptr){
+            SELECTED_ELEMENT->setState(UIState::Hovered);
+            if(SELECTED_ELEMENT->onHover) SELECTED_ELEMENT->onHover(SELECTED_ELEMENT->param);
+        }
+        
     }
 }
 
@@ -129,7 +131,7 @@ void createUnitUI(){
     };
     btnMove->offHover = [](int param){
         if(SELECTED_UNIT != nullptr){
-            SELECTED_UNIT->offHoverSkill(param);
+            SELECTED_UNIT->offHoverSkill();
         }
     };
 
@@ -149,7 +151,7 @@ void createUnitUI(){
         };
         skillButtonElement->offHover = [](int param){
             if(SELECTED_UNIT != nullptr){
-                SELECTED_UNIT->offHoverSkill(param);
+                SELECTED_UNIT->offHoverSkill();
             }
         };
         x+= 47.0f;
@@ -255,7 +257,7 @@ int main(int argc, char *argv[]){
                 if(windowEvent.button.button == SDL_BUTTON_RIGHT){
                     if(SELECTED_UNIT){
                         if(SELECTED_UNIT->state == UnitState::Casting || SELECTED_UNIT->state == UnitState::Selecting){
-                            SELECTED_UNIT->offHoverSkill(SELECTED_UNIT->selectedSkill);
+                            SELECTED_UNIT->offHoverSkill();
                             SELECTED_UNIT->selectedSkill = -1;
                             SELECTED_UNIT->state = UnitState::Idle;
                         }

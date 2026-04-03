@@ -4,7 +4,7 @@
 Skill CreateMoveSkill() {
     return {
         0, 
-        SkillOrigin::Self,
+        SkillOrigin::Tile,
         "Move", 
         "Se Mova", 
         SkillDependency::Speed, 
@@ -15,7 +15,7 @@ Skill CreateMoveSkill() {
         false,
         CostType::MovePoints,
         {{
-            EffectTarget::Self,
+            EffectTarget::Caster,
             Shape::Tile,
             EffectType::Pathfind,
             SkillDependency::Speed,
@@ -31,7 +31,7 @@ Skill CreateMoveSkill() {
 Skill CreateSampleSkill() {
     return {
         1, 
-        SkillOrigin::Tile,
+        SkillOrigin::Unit,
         "Test", 
         "test", 
         SkillDependency::None, 

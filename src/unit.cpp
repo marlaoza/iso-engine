@@ -78,6 +78,8 @@ void Unit::desselect(){
 }
 
 void Unit::hoverSkill(int skillId){
+    this->offHoverSkill();
+        
     if(this->state == UnitState::Casting || this->state == UnitState::Moving || this->skills.size() <= 0) return;
     Skill* skill = this->skills[skillId];
     
@@ -92,11 +94,12 @@ void Unit::hoverSkill(int skillId){
         
 }
 
-void Unit::offHoverSkill(int skillId){
+void Unit::offHoverSkill(){
     if(this->state == UnitState::Selecting){
         for (SDL_Point p : this->reachMap){clearHighlight(p);}
         this->reachMap.clear();
         this->state = UnitState::Idle;
+
     }
         
 }
@@ -168,6 +171,7 @@ void Unit::calculatePreview(SDL_Point selectedTile){
 
     for (SkillEffect& e : s->effects)
     {
+        SDL_Point effectTarget = selectedTile;
 
         EffectPreview currentEp;
         int range = this->getSkillDependentValue(e.radiusDep, e.baseRadius);
@@ -177,23 +181,31 @@ void Unit::calculatePreview(SDL_Point selectedTile){
         for (SDL_Point p : currentEp.affectedTiles)
         {   
             Unit* pTarget = unitMap[p.y * BOARD_WIDTH + p.x];
+            if(e.target == EffectTarget::Unit && pTarget == nullptr){continue;}
             int range2 = this->getSkillDependentValue(e.powerDep, e.basePower);
             std::vector<SDL_Point> actionLine;
 
-            if (e.type == EffectType::Pathfind) {
-                if (e.target == EffectTarget::Caster) {
-                    actionLine = getPath(origin, selectedTile, range2);
-                } 
-                else if (e.target == EffectTarget::Unit && pTarget != nullptr) {
-                    actionLine = getPath(pTarget->gridPos, this->gridPos, range2);
+            SDL_Point start = p;
+            SDL_Point end = selectedTile;
+
+            switch (e.type)
+            {
+                case EffectType::Pathfind:
+                    if(e.target == EffectTarget::Unit){end = this->gridPos;}
+                    else if(e.target == EffectTarget::Caster){start = this->gridPos;}
+                    actionLine = getPath(start, end, range2);
+                break;
+
+                case EffectType::Move:
+                {
+                    Direction pushDir = getDirection(p, origin);
+                    actionLine = getLine(p, pushDir, range2, 0, true);
                 }
-            } 
-            else if (e.type == EffectType::Move && pTarget != nullptr) {
-                if(origin.x == pTarget->gridPos.x && origin.y == pTarget->gridPos.y){
-                    origin = this->gridPos;
-                }
-                Direction pushDir = getDirection(pTarget->gridPos, origin);
-                actionLine = getLine(pTarget->gridPos, pushDir, range2, 0, true);
+                break;
+                
+                default:
+                    continue;
+                break;
             }
 
             currentEp.actionLines.push_back(actionLine);
@@ -223,7 +235,9 @@ void Unit::castSkill(int skillId){
             for (SDL_Point p : ep.affectedTiles)
             {
                 Unit* pTarget = unitMap[p.y * BOARD_WIDTH + p.x];
-                if(pTarget == nullptr)continue;
+                if(e.target == EffectTarget::Caster){pTarget = this;}
+                
+                if(e.target != EffectTarget::Tile && pTarget == nullptr) continue;
                 printf(" em %d\n",pTarget->id);
 
                 switch(e.type){
