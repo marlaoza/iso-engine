@@ -13,33 +13,37 @@
 
 bool dirtyUnits = false;
 
- Unit::Unit(char name[32], SDL_Point gridPos, UnitData* uData) {
+ Unit::Unit(const std::string& name, SDL_Point gridPos, const UnitData& uData) {
     this->id = units.size();
-    memcpy(this->name,name, 32*sizeof(char));
+    this->name = name;
     this->gridOffset = {0, 0};
     this->gridPos = gridPos;
-    this->height = uData->baseHeight;
-    this->width = uData->baseWidth;
-    this->maxHp = uData->baseHP;
+    this->height = uData.baseHeight;
+    this->width = uData.baseWidth;
+    this->maxHp = uData.baseHP;
     this->currentHp = this->maxHp;
-    this->maxSpeed = uData->baseSpeed;
+    this->maxSpeed = uData.baseSpeed;
     this->currentSpeed = this->maxSpeed;
-    this->shield = uData->baseShield;
-    this->animations = uData->animations;
-    this->expressionSheet = uData->expressionSheet;
+    this->shield = uData.baseShield;
+    this->animations = uData.animations;
+    this->expressionSheet = uData.expressionSheet;
     this->state = UnitState::Idle;
     this->direction = Direction::Down;
     this->selectedSkill = -1;
-    units.push_back(this);
-    unitMap[gridPos.y*BOARD_WIDTH + gridPos.x] = this;
-    dirtyUnits = true;
+
+    this->currentClip = nullptr;
+    this->clipStartFrame = 0;
+    
     this->targetPos = {-1, -1};
     this->targetPool = {};
     this->poolIndex = 0;
 
     this->skills.push_back(new Skill(CreateMoveSkill()));
     this->skills.push_back(new Skill(CreateSampleSkill()));
-    this->skills.push_back(new Skill(CreateMoveSkill()));
+
+    units.push_back(this);
+    unitMap[gridPos.y*BOARD_WIDTH + gridPos.x] = this;
+    dirtyUnits = true;
 }
 
 Unit::~Unit() {
@@ -80,7 +84,7 @@ void Unit::desselect(){
 void Unit::hoverSkill(int skillId){
     this->offHoverSkill();
         
-    if(this->state == UnitState::Casting || this->state == UnitState::Moving || this->skills.size() <= 0) return;
+    if(this->state == UnitState::Casting || this->state == UnitState::Moving || this->skills.size() <= 0 || this->skills.size() <= skillId) return;
     Skill* skill = this->skills[skillId];
     
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);
@@ -124,7 +128,7 @@ void Unit::setPath(std::vector<SDL_Point> path){
     if(path.size() <= 0) return;
     printf("%d | vai se mover %d casas\n",this->id, path.size());
     this->poolIndex = 0;
-    this->targetPool = path;
+    this->targetPool = std::move(path);
     if(this->targetPool.size() > 0){
         this->targetPos = targetPool[0];
         this->direction = getDirection(this->gridPos, this->targetPos);
@@ -236,7 +240,7 @@ void Unit::castSkill(int skillId){
             {
                 Unit* pTarget = unitMap[p.y * BOARD_WIDTH + p.x];
                 if(e.target == EffectTarget::Caster){pTarget = this;}
-                
+
                 if(e.target != EffectTarget::Tile && pTarget == nullptr) continue;
                 printf(" em %d\n",pTarget->id);
 
@@ -304,7 +308,6 @@ void Unit::calculateReachMap(int size, int minSize){
 };
 
 void Unit::setTile(SDL_Point target){
-    SDL_Point oldPos = this->gridPos;
     unitMap[this->gridPos.y*BOARD_WIDTH + this->gridPos.x] = nullptr;
     unitMap[target.y*BOARD_WIDTH + target.x] = this;
     this->gridOffset = {0, 0};
@@ -318,13 +321,13 @@ void Unit::playClip(std::string clipName){
 
 int Unit::getClipStartFrame(){return this->clipStartFrame;}
 
-Animation* Unit::getCurrentAnimation(){
-    if(this->currentClip != nullptr){return this->currentClip;}
+Animation& Unit::getCurrentAnimation(){
+    if(this->currentClip != nullptr){return *this->currentClip;}
 
-    if(this->state == UnitState::Moving){return this->animations["idle"];}
-    if(this->state == UnitState::Casting){return this->animations["idle"];}
+    if(this->state == UnitState::Moving){return *this->animations["idle"];}
+    if(this->state == UnitState::Casting){return *this->animations["idle"];}
     
-    return this->animations["idle"];
+    return *this->animations["idle"];
 }
 
 
@@ -355,10 +358,8 @@ void sortUnits(SDL_GPUDevice* renderer){
     
     unitIndexSize = 0;
 
-    for (int i = 0; i < units.size(); i++)
+    for (Unit* u : units)
     { 
-        Unit* u = units[i];
-            
         SDL_FPoint tileOrigin = tiles[u->gridPos.y*BOARD_WIDTH + u->gridPos.x].tile.surface[0];
         SDL_FPoint tl = {tileOrigin.x + u->gridOffset.x, tileOrigin.y + u->gridOffset.y};
  
@@ -369,7 +370,6 @@ void sortUnits(SDL_GPUDevice* renderer){
             {ptr.x - u->width, ptr.y},
             {ptr.x + u->width +1, ptr.y},
         };
-   
 
         int indexSum = 0;
 
@@ -381,15 +381,13 @@ void sortUnits(SDL_GPUDevice* renderer){
             if(u->gridPos.y > u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/1.5f){indexSum = -1;}}
         }
 
-        Animation* anim = u->getCurrentAnimation();
-
+        const Animation& anim = u->getCurrentAnimation();
         SDL_FPoint UVS[4] = {
             {0.0f, 0.0f},{1.0f, 0.0f},
             {0.0f, 1.0f},{1.0f, 1.0f}
         };
 
-        for (int i = 0; i < 4; i++){vertices.push_back({points_p[i], UVS[i], anim->sheet->id, anim->frameWidth, anim->frameHeight, anim->frames, (int)u->direction, u->gridPos.x + u->gridPos.y, indexSum});}
-        
+        for (int i = 0; i < 4; i++){vertices.push_back({points_p[i], UVS[i], anim.sheet->id, anim.frameWidth, anim.frameHeight, anim.frames, (int)u->direction, u->gridPos.x + u->gridPos.y, indexSum});}
         indices.push_back(vertexOffset);
         indices.push_back(vertexOffset + 1);
         indices.push_back(vertexOffset + 2);

@@ -25,7 +25,7 @@ struct UnitData {
 class Unit {       
     public:
         int id;
-        char name[32];
+        std::string name;
         SDL_FPoint gridOffset;
         SDL_Point gridPos;
         int height;
@@ -41,7 +41,7 @@ class Unit {
         int selectedSkill;
         std::vector<Skill*> skills;
 
-        Unit(char name[32], SDL_Point gridPos, UnitData* uData);
+        Unit(const std::string& name, SDL_Point gridPos, const UnitData& uData);
         ~Unit();
 
         void select();
@@ -58,7 +58,7 @@ class Unit {
         void move();
         void calculatePreview(SDL_Point target);
 
-        Animation* getCurrentAnimation();
+        Animation& getCurrentAnimation();
 
         void playClip(std::string clipName);
         Animation* currentClip;

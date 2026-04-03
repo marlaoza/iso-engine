@@ -391,9 +391,9 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window)
     SDL_GPUTextureCreateInfo texInfo = {};
     texInfo.type = SDL_GPU_TEXTURETYPE_2D_ARRAY;
     texInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-    texInfo.width = 144;
-    texInfo.height = 144;
-    texInfo.layer_count_or_depth = 10;
+    texInfo.width = 255;
+    texInfo.height = 255;
+    texInfo.layer_count_or_depth = 255;
     texInfo.num_levels = 1;
     texInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
 

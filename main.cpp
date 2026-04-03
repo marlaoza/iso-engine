@@ -96,7 +96,7 @@ void findSelectedUIElement(){
             LAST_ELEMENT->setState(UIState::Default);
             if(LAST_ELEMENT->offHover) LAST_ELEMENT->offHover(LAST_ELEMENT->param);
         }
-        
+
         if(SELECTED_ELEMENT != nullptr){
             SELECTED_ELEMENT->setState(UIState::Hovered);
             if(SELECTED_ELEMENT->onHover) SELECTED_ELEMENT->onHover(SELECTED_ELEMENT->param);
@@ -264,7 +264,7 @@ int main(int argc, char *argv[]){
                         else {SELECTED_UNIT->desselect();toggleUnitUI(renderer);}
                     }
                     else if(SELECTED_TILE.x >= 0 && SELECTED_TILE.y >= 0 && !unitMap[SELECTED_TILE.y * BOARD_WIDTH + SELECTED_TILE.x]){
-                        new Unit("carinha", SELECTED_TILE, test);
+                        new Unit("carinha", SELECTED_TILE, *test);
                     }
                     
                 }
@@ -281,6 +281,7 @@ int main(int argc, char *argv[]){
         float frameCheck = FRAME_TIME;
         for (Unit* u : units){
             if(u->currentClip != nullptr){
+
                 if(frameCheck < u->getClipStartFrame()){frameCheck += 50.0f;}
                 if(frameCheck - u->getClipStartFrame() >= u->currentClip->frames){ u->currentClip = nullptr;}
             }
