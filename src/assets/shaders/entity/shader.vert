@@ -21,8 +21,9 @@ struct VSInput {
     int2 frameSize: TEXCOORD2;
     int frameCount: TEXCOORD3;
     int direction: TEXCOORD4;
-    int2 gridPos: TEXCOORD5;
-    int indexOffset: TEXCOORD6; 
+    int speed: TEXCOORD5;
+    int2 gridPos: TEXCOORD6;
+    int indexOffset: TEXCOORD7; 
 
 };
 
@@ -59,7 +60,7 @@ VSOutput main(VSInput input) {
 
     output.uv = input.uv;
     output.direction = input.direction;
-    output.frame = frameTime % input.frameCount;
+    output.frame = (frameTime * input.speed) % input.frameCount;
 
     return output;
 }

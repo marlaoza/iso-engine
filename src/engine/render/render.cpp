@@ -312,7 +312,7 @@ SDL_GPUSampler* unitSampler;
 void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window)
 {
     SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
-    SDL_GPUVertexAttribute attributes[8];
+    SDL_GPUVertexAttribute attributes[9];
 
     attributes[0].location = 0;
     attributes[0].buffer_slot = 0;
@@ -346,13 +346,18 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window)
 
     attributes[6].location = 6;
     attributes[6].buffer_slot = 0;
-    attributes[6].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;    //GRID POS
+    attributes[6].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;     //SPEED
     attributes[6].offset = (sizeof(float)*4) + (sizeof(int)*5);
 
     attributes[7].location = 7;
     attributes[7].buffer_slot = 0;
-    attributes[7].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;     //INDEX OFFSET
-    attributes[7].offset = (sizeof(float)*4) + (sizeof(int)*7);
+    attributes[7].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;    //GRID POS
+    attributes[7].offset = (sizeof(float)*4) + (sizeof(int)*6);
+
+    attributes[8].location = 8;
+    attributes[8].buffer_slot = 0;
+    attributes[8].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;     //INDEX OFFSET
+    attributes[8].offset = (sizeof(float)*4) + (sizeof(int)*8);
 
     pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/entity/vertShader", SDL_GPU_SHADERSTAGE_VERTEX, 0);
     pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/entity/fragShader", SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
@@ -367,7 +372,7 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window)
     };
 
     pipelineInfo.vertex_input_state.vertex_attributes = attributes;
-    pipelineInfo.vertex_input_state.num_vertex_attributes = 8;
+    pipelineInfo.vertex_input_state.num_vertex_attributes = 9;
 
     pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 

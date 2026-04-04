@@ -24,6 +24,7 @@ struct Entity_Vertex {
     int frameWidth, frameHeight;
     int frameCount;
     int direction;
+    int speed;
     int32_t gridX, gridY;
     int indexOffset;
 };

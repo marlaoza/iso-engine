@@ -161,7 +161,7 @@ void sortProjectiles(SDL_GPUDevice* renderer){
             {0.0f, 1.0f},{1.0f, 1.0f}
         };
 
-        for (int i = 0; i < 4; i++){vertices.push_back({points_p[i], UVS[i], anim.sheet->id, anim.frameWidth, anim.frameHeight, anim.frames, 0, p->gridPos.x + p->gridPos.y, indexSum});}
+        for (int i = 0; i < 4; i++){vertices.push_back({points_p[i], UVS[i], anim.sheet->id, anim.frameWidth, anim.frameHeight, anim.frames, 0, 18, p->gridPos.x + p->gridPos.y, indexSum});}
         indices.push_back(vertexOffset);
         indices.push_back(vertexOffset + 1);
         indices.push_back(vertexOffset + 2);
