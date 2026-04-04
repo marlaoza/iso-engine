@@ -8,13 +8,7 @@
 #include "skill.h"
 #include "sprite.h"
 #include <string>
-
-enum class UnitState {
-    Idle,
-    Moving,
-    Casting,
-    Selecting
-};
+#include "entity.h"
 
 struct UnitData {
     std::map<std::string, Animation*> animations;
@@ -22,22 +16,14 @@ struct UnitData {
     int baseHeight, baseWidth, baseHP, baseSpeed, baseShield;
 };
 
-class Unit {       
+class Unit : public Entity{       
     public:
-        int id;
         std::string name;
-        SDL_FPoint gridOffset;
-        SDL_Point gridPos;
-        int height;
-        int width;
         int maxHp;
         int currentHp;
         int maxSpeed;
         int currentSpeed;
         int shield;
-        UnitState state;
-        Direction direction;
-        SDL_Point targetPos;
         int selectedSkill;
         std::vector<Skill*> skills;
 
@@ -54,29 +40,17 @@ class Unit {
 
         void castSkill(int skillId);
 
-        void setPath(std::vector<SDL_Point> path);
-        void move();
         void calculatePreview(SDL_Point target);
 
-        Animation& getCurrentAnimation();
-
-        void playClip(std::string clipName);
-        Animation* currentClip;
-        int getClipStartFrame();
+        void move() override;
 
     private:
-        std::map<std::string, Animation*> animations;
         SpriteSheet* expressionSheet;
-        std::vector<SDL_Point> reachMap;
-        std::vector<SDL_Point> targetPool;
-        int poolIndex;
-
-        int clipStartFrame;
 
         void calculateReachMap(int size, int minSize = 0);
-
-        void setTile(SDL_Point target);
         int getSkillDependentValue(SkillDependency dep, int base);
+
+        void setTile(SDL_Point target) override;
 };
 
 extern bool dirtyUnits;

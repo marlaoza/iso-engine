@@ -27,7 +27,7 @@ bool dirtyUnits = false;
     this->shield = uData.baseShield;
     this->animations = uData.animations;
     this->expressionSheet = uData.expressionSheet;
-    this->state = UnitState::Idle;
+    this->state = EntityState::Idle;
     this->direction = Direction::Down;
     this->selectedSkill = -1;
 
@@ -62,9 +62,9 @@ void Unit::select(){
 }
 
 void Unit::desselect(){
-    if(this->state == UnitState::Casting || this->state == UnitState::Moving) return;
+    if(this->state == EntityState::Casting || this->state == EntityState::Moving) return;
     if(SELECTED_UNIT == this){
-        this->state = UnitState::Idle;
+        this->state = EntityState::Idle;
         for (SDL_Point p : this->reachMap){clearHighlight(p);}
         this->reachMap.clear();
         
@@ -84,7 +84,7 @@ void Unit::desselect(){
 void Unit::hoverSkill(int skillId){
     this->offHoverSkill();
         
-    if(this->state == UnitState::Casting || this->state == UnitState::Moving || this->skills.size() <= 0 || this->skills.size() <= skillId) return;
+    if(this->state == EntityState::Casting || this->state == EntityState::Moving || this->skills.size() <= 0 || this->skills.size() <= skillId) return;
     Skill* skill = this->skills[skillId];
     
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);
@@ -94,22 +94,22 @@ void Unit::hoverSkill(int skillId){
     {
         addHighlight(p, 1+skill->highlightPallete, skill->highlightPallete);
     }
-    this->state = UnitState::Selecting;
+    this->state = EntityState::Selecting;
         
 }
 
 void Unit::offHoverSkill(){
-    if(this->state == UnitState::Selecting){
+    if(this->state == EntityState::Selecting){
         for (SDL_Point p : this->reachMap){clearHighlight(p);}
         this->reachMap.clear();
-        this->state = UnitState::Idle;
+        this->state = EntityState::Idle;
 
     }
         
 }
 
 void Unit::selectSkill(int skillId){
-    if(this->state == UnitState::Casting || this->state == UnitState::Moving || this->skills.size() <= 0) return;
+    if(this->state == EntityState::Casting || this->state == EntityState::Moving || this->skills.size() <= 0) return;
     Skill* skill = this->skills[skillId];
 
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);    
@@ -119,21 +119,9 @@ void Unit::selectSkill(int skillId){
     {
         addHighlight(p, 1+skill->highlightPallete, skill->highlightPallete);
     }
-    this->state = UnitState::Casting;
+    this->state = EntityState::Casting;
     this->selectedSkill = skillId;
     
-}
-
-void Unit::setPath(std::vector<SDL_Point> path){
-    if(path.size() <= 0) return;
-    printf("%d | vai se mover %d casas\n",this->id, path.size());
-    this->poolIndex = 0;
-    this->targetPool = std::move(path);
-    if(this->targetPool.size() > 0){
-        this->targetPos = targetPool[0];
-        this->direction = getDirection(this->gridPos, this->targetPos);
-        this->state = UnitState::Moving;
-    }
 }
 
 int Unit::getSkillDependentValue(SkillDependency dep, int base){
@@ -152,7 +140,7 @@ void Unit::calculatePreview(SDL_Point selectedTile){
     SDL_Point origin = selectedTile;
 
     if(
-        this->state != UnitState::Casting
+        this->state != EntityState::Casting
         ||
         selectedSkill < 0 || selectedSkill > (skills.size()-1)
     ) {return;}
@@ -225,7 +213,7 @@ void Unit::calculatePreview(SDL_Point selectedTile){
 }
 
 void Unit::castSkill(int skillId){
-    if(this->state == UnitState::Casting){
+    if(this->state == EntityState::Casting){
         if(selectedSkill < 0 || selectedSkill > (skills.size()-1)) return;
         Skill* s = this->skills[selectedSkill];
 
@@ -267,38 +255,15 @@ void Unit::castSkill(int skillId){
 
         for (SDL_Point p : this->reachMap){clearHighlight(p);}
 
-        if(this->state != UnitState::Moving){
-            this->state = UnitState::Idle;
+        if(this->state != EntityState::Moving){
+            this->state = EntityState::Idle;
         }
+        this->selectedSkill = -1;
     }
 }
 
-void Unit::move(){
-    SDL_FPoint target = tiles[this->targetPos.y*BOARD_WIDTH + this->targetPos.x].tile.surface[0];
-    SDL_FPoint current = tiles[this->gridPos.y*BOARD_WIDTH + this->gridPos.x].tile.surface[0];
-    SDL_FPoint targetOffset = {target.x - current.x, target.y - current.y};
-    float distX = this->gridOffset.x - targetOffset.x;
-    float distY = this->gridOffset.y - targetOffset.y;
-    float dist = sqrtf(distX*distX + distY*distY);
-    
-    if(dist > 0.5f){ 
-        this->gridOffset.x -= (distX / dist) * 40.0f * DELTA_TIME;
-        this->gridOffset.y -= (distY / dist) * 40.0f * DELTA_TIME;
-    } else {
-        this->setTile(this->targetPos);
-        this->poolIndex ++;
-        if(this->poolIndex < this->targetPool.size()){
-            this->targetPos = this->targetPool[this->poolIndex];
-            this->direction = getDirection(this->gridPos, this->targetPos);
-        }else{
-            this->state = UnitState::Idle;
-            this->targetPos = {-1,-1};
-            this->poolIndex = 0;
-            this->selectedSkill = -1;
-            for (SDL_Point p : this->targetPool){clearHighlight(p);}
-            this->targetPool.clear();
-        }
-    }
+void Unit::move() {
+    Entity::move();
     dirtyUnits = true;
 }
 
@@ -308,28 +273,10 @@ void Unit::calculateReachMap(int size, int minSize){
 };
 
 void Unit::setTile(SDL_Point target){
-    unitMap[this->gridPos.y*BOARD_WIDTH + this->gridPos.x] = nullptr;
+    Entity::setTile(target);
+    unitMap[this->lastPos.y*BOARD_WIDTH + this->lastPos.x] = nullptr;
     unitMap[target.y*BOARD_WIDTH + target.x] = this;
-    this->gridOffset = {0, 0};
-    this->gridPos = target;
 };
-
-void Unit::playClip(std::string clipName){
-    this->currentClip = this->animations[clipName];
-    this->clipStartFrame = FRAME_TIME;
-}
-
-int Unit::getClipStartFrame(){return this->clipStartFrame;}
-
-Animation& Unit::getCurrentAnimation(){
-    if(this->currentClip != nullptr){return *this->currentClip;}
-
-    if(this->state == UnitState::Moving){return *this->animations["idle"];}
-    if(this->state == UnitState::Casting){return *this->animations["idle"];}
-    
-    return *this->animations["idle"];
-}
-
 
 
 Unit* SELECTED_UNIT;
@@ -373,7 +320,7 @@ void sortUnits(SDL_GPUDevice* renderer){
 
         int indexSum = 0;
 
-        if(u->state == UnitState::Moving){
+        if(u->state == EntityState::Moving){
             SDL_FPoint normOffset = {fabs(u->gridOffset.x), fabs(u->gridOffset.y)};
             if(u->gridPos.x < u->targetPos.x){if(normOffset.x > (float)(TILE_SIZE/3.0f)){indexSum = 1;}}
             if(u->gridPos.x > u->targetPos.x){if(normOffset.x > (float)(TILE_SIZE/1.5f)){indexSum = -1;}}

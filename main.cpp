@@ -51,9 +51,9 @@ void findSelectedTile(){
         && SELECTED_TILE.y >= 0
         && SELECTED_UNIT != nullptr
         && (SELECTED_TILE.x != LAST_TILE.x || SELECTED_TILE.y != LAST_TILE.y)) {
-        if(SELECTED_UNIT->state == UnitState::Casting) SELECTED_UNIT->calculatePreview(SELECTED_TILE);
+        if(SELECTED_UNIT->state == EntityState::Casting) SELECTED_UNIT->calculatePreview(SELECTED_TILE);
         
-        if(SELECTED_UNIT->state != UnitState::Moving){
+        if(SELECTED_UNIT->state != EntityState::Moving){
             SELECTED_UNIT->direction = getDirection(SELECTED_UNIT->gridPos, SELECTED_TILE);
             dirtyUnits = true;
         }
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]){
                     if(SELECTED_TILE.x >= 0 && SELECTED_TILE.y >= 0){
                         if(unitMap[SELECTED_TILE.y * BOARD_WIDTH + SELECTED_TILE.x] != nullptr && unitMap[SELECTED_TILE.y * BOARD_WIDTH + SELECTED_TILE.x] != SELECTED_UNIT){
                             
-                            if(SELECTED_UNIT == nullptr || (SELECTED_UNIT && SELECTED_UNIT->state == UnitState::Idle)) {
+                            if(SELECTED_UNIT == nullptr || (SELECTED_UNIT && SELECTED_UNIT->state == EntityState::Idle)) {
                                 if(SELECTED_UNIT)SELECTED_UNIT->desselect();
                                 unitMap[SELECTED_TILE.y * BOARD_WIDTH + SELECTED_TILE.x]->select();
                                 toggleUnitUI(renderer);
@@ -256,10 +256,10 @@ int main(int argc, char *argv[]){
                 }
                 if(windowEvent.button.button == SDL_BUTTON_RIGHT){
                     if(SELECTED_UNIT){
-                        if(SELECTED_UNIT->state == UnitState::Casting || SELECTED_UNIT->state == UnitState::Selecting){
+                        if(SELECTED_UNIT->state == EntityState::Casting || SELECTED_UNIT->state == EntityState::Selecting){
                             SELECTED_UNIT->offHoverSkill();
                             SELECTED_UNIT->selectedSkill = -1;
-                            SELECTED_UNIT->state = UnitState::Idle;
+                            SELECTED_UNIT->state = EntityState::Idle;
                         }
                         else {SELECTED_UNIT->desselect();toggleUnitUI(renderer);}
                     }
@@ -278,15 +278,9 @@ int main(int argc, char *argv[]){
             dirtyHighlights = true;
         } 
         else {findSelectedTile();}
-        float frameCheck = FRAME_TIME;
-        for (Unit* u : units){
-            if(u->currentClip != nullptr){
+        
+        for (Unit* u : units){u->update();}
 
-                if(frameCheck < u->getClipStartFrame()){frameCheck += 50.0f;}
-                if(frameCheck - u->getClipStartFrame() >= u->currentClip->frames){ u->currentClip = nullptr;}
-            }
-            if(u->state == UnitState::Moving) u->move();
-        }
         if(dirtyMap)sortTilePoints(renderer);
         if(dirtyHighlights)sortHighlight(renderer);
         if(dirtyUnits)sortUnits(renderer);
