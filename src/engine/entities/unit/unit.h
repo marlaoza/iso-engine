@@ -1,14 +1,18 @@
 #pragma once
-#include "constants.h"
+
 #include <vector>
 #include <map>
-#include "geometry.h"
 #include "SDL_rect.h"
-#include "render.h"
-#include "skill.h"
-#include "sprite.h"
 #include <string>
-#include "entity.h"
+
+#include "entities/entity/entity.h"
+#include "entities/skill/skill.h"
+
+#include "sprite/sprite.h"
+#include "render/render.h"
+#include "geometry/geometry.h"
+
+#include "constants.h"
 
 struct UnitData {
     std::map<std::string, Animation*> animations;

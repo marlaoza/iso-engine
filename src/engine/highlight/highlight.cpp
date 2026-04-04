@@ -1,8 +1,4 @@
 #include "highlight.h"
-#include "render.h"
-#include "constants.h"
-#include "geometry.h"
-#include "enginedata.h"
 
 int highlightMap[BOARD_WIDTH * BOARD_HEIGHT];
 bool dirtyHighlights = false;

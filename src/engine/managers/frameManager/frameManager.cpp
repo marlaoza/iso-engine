@@ -1,7 +1,10 @@
-#include "enginedata.h"
+#include "frameManager.h"
+
 #include "SDL_timer.h"
+
+#include "managers/cameraManager/cameraManager.h"
+
 #include "constants.h"
-#include "camera.h"
 
 float DELTA_TIME = 0;
 Uint64 LAST_TIME = 0;

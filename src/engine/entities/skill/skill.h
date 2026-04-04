@@ -1,6 +1,8 @@
 #pragma once
+
 #include <vector>
-#include "geometry.h"
+
+#include "geometry/geometry.h"
 
 enum class EffectTarget {
     Caster,

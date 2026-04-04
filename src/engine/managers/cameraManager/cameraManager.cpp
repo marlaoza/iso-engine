@@ -1,7 +1,9 @@
-#include "camera.h"
+#include "cameraManager.h"
+
+#include "managers/frameManager/frameManager.h"
+#include "managers/inputManager/inputManager.h"
+
 #include "constants.h"
-#include "enginedata.h"
-#include "managers/inputManager.h"
 
 SDL_FPoint CAM_POS = {0, 0};
 float CAM_SPEED = CAM_MIN_SPEED;

@@ -1,14 +1,14 @@
 #include "unit.h"
+
 #include "SDL_rect.h"
 #include <vector>
-#include "constants.h"
-#include "geometry.h"
 #include <cmath>
-#include "enginedata.h"
-#include "map.h"
 #include <cstdio>
-#include "highlight.h"
-#include "skill.h"
+
+#include "managers/frameManager/frameManager.h"
+
+#include "highlight/highlight.h"
+#include "map/map.h"
 
 
 bool dirtyUnits = false;

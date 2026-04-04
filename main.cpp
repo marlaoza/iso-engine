@@ -1,16 +1,16 @@
 #include <SDL3/SDL.h>
-#include "enginedata.h"
-#include "constants.h"
 #include <iostream>
-#include "render.h"
-#include "map.h"
-#include "camera.h"
-#include "unit.h"
-#include "ui.h"
-#include "highlight.h"
-#include "sprite.h"
-#include "managers/inputManager.h"
-#include "managers/dialogManager.h"
+#include "constants.h"
+#include "render/render.h"
+#include "map/map.h"
+#include "ui/ui.h"
+#include "highlight/highlight.h"
+#include "sprite/sprite.h"
+#include "entities/unit/unit.h"
+#include "managers/inputmanager/inputManager.h"
+#include "managers/dialogmanager/dialogManager.h"
+#include "managers/cameramanager/cameramanager.h"
+#include "managers/framemanager/framemanager.h"
 
 
 bool watcher(void *userdata, SDL_Event* event){
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]){
             dirtyHighlights = true;
         } 
         else {findSelectedTile();}
-        
+
         for (Unit* u : units){u->update();}
 
         if(dirtyMap)sortTilePoints(renderer);

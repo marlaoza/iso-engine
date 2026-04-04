@@ -1,6 +1,6 @@
 #include "entity.h"
-#include "enginedata.h"
-#include "highlight.h"
+#include "managers/frameManager/frameManager.h"
+#include "highlight/highlight.h"
 #include <cmath>
 
 void Entity::setTile(SDL_Point target){

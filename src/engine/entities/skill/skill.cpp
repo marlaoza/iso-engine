@@ -1,5 +1,4 @@
 #include "skill.h"
-#include "geometry.h"
 
 Skill CreateMoveSkill() {
     return {

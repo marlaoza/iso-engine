@@ -3,10 +3,12 @@
 #include <string>
 #include "SDL_rect.h"
 #include "SDL_gpu.h"
-#include "geometry.h"
-#include "render.h"
+
+#include "geometry/geometry.h"
+#include "render/render.h"
+#include "sprite/sprite.h"
+
 #include "colors.h"
-#include "sprite.h"
 
 
 enum class UIState {
@@ -25,6 +27,27 @@ struct UIText {
     SDL_GPUTexture* texture = nullptr;
     int width, height;
     char* font;        
+};
+
+enum class UIStylePositionType {Absolute,Relative,Anchored};
+//abs use abs position, 
+//relative use flex + position as offset,
+//anchored fixed, calc anchorPoint
+
+enum class AnchorPoint {
+    TopLeft,TopCenter,TopRight,
+    CenterLeft,Center,CenterRight,
+    BottomLeft, BottomCenter, BottomRight
+};
+enum class FlexDirection {Row,Column};
+
+struct UIStyle {
+    UIStylePositionType position;
+    AnchorPoint anchorPoint;
+    FlexDirection flexDirection;
+    float margin[4]; //t,r,b,l
+    float padding[4];
+    float gap;
 };
 
 class UIElement {       
@@ -81,6 +104,7 @@ class UIElement {
         UIElement* parent;
         std::vector<UIElement*> children;
         UIText text;
+        UIStyle style;
         SDL_FPoint position;
         int height, width;
         UIState state;

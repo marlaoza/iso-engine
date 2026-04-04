@@ -1,10 +1,12 @@
 #pragma once
-#include "constants.h"
+
 #include "SDL_rect.h"
-#include "geometry.h"
 #include "SDL_gpu.h"
-#include "render.h"
+
+#include "geometry/geometry.h"
+#include "render/render.h"
 #include "colors.h"
+#include "constants.h"
 
 struct MapInfo {
     int type;

@@ -2,13 +2,16 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <SDL3/SDL.h>
-#include "enginedata.h"
-#include "camera.h"
-#include "constants.h"
 #include <iostream>
 #include <SDL3_ttf/SDL_ttf.h>
+
+#include "managers/inputManager/inputManager.h"
+#include "managers/frameManager/frameManager.h"
+#include "managers/cameraManager/cameraManager.h"
+
 #include "colors.h"
-#include "managers/inputManager.h"
+#include "constants.h"
+
 
 SDL_GPUDevice* renderer;
 

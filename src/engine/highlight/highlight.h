@@ -1,8 +1,12 @@
 #pragma once
-#include "render.h"
+
+#include "managers/frameManager/frameManager.h"
+
+#include "render/render.h"
+#include "geometry/geometry.h"
+
 #include "constants.h"
-#include "geometry.h"
-#include "enginedata.h"
+
 
 extern Geometry<Highlight_Vertex> highlightGeometry[BOARD_WIDTH + BOARD_HEIGHT - 1];
 extern int highlightMap[BOARD_WIDTH * BOARD_HEIGHT];

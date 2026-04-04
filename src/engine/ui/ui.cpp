@@ -1,9 +1,10 @@
 #include "ui.h"
 #include <vector>
 #include "SDL_rect.h"
-#include "render.h"
+
+#include "render/render.h"
 #include "colors.h"
-#include "geometry.h"
+#include "geometry/geometry.h"
 
 UIElement::UIElement(SDL_FPoint position, int width, int height, bool interactable, Sprite sprite, Sprite hlSprite, int param, SDL_FColor tint) {
     this->id = 0;

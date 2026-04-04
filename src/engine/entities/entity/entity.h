@@ -1,10 +1,12 @@
 #pragma once
 #include "SDL_rect.h"
-#include "geometry.h"
 #include <functional>
-#include "sprite.h"
 #include <string>
 #include <map>
+
+#include "sprite/sprite.h"
+#include "geometry/geometry.h"
+
 
 enum class EntityState {
     Idle,

@@ -1,7 +1,9 @@
 #pragma once
+
 #include "SDL_stdinc.h"
 #include "SDL_rect.h"
-#include "geometry.h"
+
+#include "geometry/geometry.h"
 #include "constants.h"
 
 extern float DELTA_TIME;
