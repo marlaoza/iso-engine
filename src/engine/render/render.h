@@ -97,6 +97,10 @@ extern SDL_GPUBuffer* unitVBuf;
 extern SDL_GPUBuffer* unitIBuf;
 extern int unitIndexSize;
 
+extern SDL_GPUBuffer* projectileVBuf;
+extern SDL_GPUBuffer* projectileIBuf;
+extern int projectileIndexSize;
+
 extern SDL_GPUBuffer* UIVBuf;
 extern SDL_GPUBuffer* UIIBuf;
 extern int UIIndexSize;

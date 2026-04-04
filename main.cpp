@@ -1,16 +1,21 @@
 #include <SDL3/SDL.h>
 #include <iostream>
-#include "constants.h"
+
 #include "render/render.h"
 #include "map/map.h"
 #include "ui/ui.h"
 #include "highlight/highlight.h"
 #include "sprite/sprite.h"
+
 #include "entities/unit/unit.h"
+#include "entities/projectile/projectile.h"
+
 #include "managers/inputmanager/inputManager.h"
 #include "managers/dialogmanager/dialogManager.h"
 #include "managers/cameramanager/cameramanager.h"
 #include "managers/framemanager/framemanager.h"
+
+#include "constants.h"
 
 
 bool watcher(void *userdata, SDL_Event* event){
@@ -171,7 +176,9 @@ void toggleUnitUI(SDL_GPUDevice* renderer){
 
 UnitData* test;
 
-void createUnitPrefabs(){
+ProjectileData* testProjectile;
+
+void createPrefabs(){
     SpriteSheet* testIdleSheet = new SpriteSheet{
         0,
         "src/assets/unit_sprites/base_idle.png",
@@ -190,8 +197,31 @@ void createUnitPrefabs(){
 
     test = new UnitData{
         testAnimations,
-        nullptr
-        ,28, 5, 10, 3, 0
+        nullptr,
+        9, 48, 
+        10, 3, 0
+    };
+
+    SpriteSheet* projectileSheet = new SpriteSheet{
+        0,
+        "src/assets/sprites/test_projectile.png",
+    };
+
+    projectileSheet->id = loadUnitSheet(projectileSheet->path);
+
+    Animation* projectileAnimation = new Animation{
+        projectileSheet,
+        8,
+        22,
+        22,
+    };
+
+    testProjectile = new ProjectileData{
+        11,
+        22,
+        90.0,
+        ProjectileTrajectory::Arc,
+        projectileAnimation,
     };
 }
 
@@ -214,7 +244,7 @@ int main(int argc, char *argv[]){
     if(renderer == NULL){
         return 1;
     }
-    createUnitPrefabs();
+    createPrefabs();
 
     createUnitUI();
 
@@ -222,12 +252,20 @@ int main(int argc, char *argv[]){
     sortTilePoints(renderer);
 
     SDL_Event windowEvent;
+
+    
     while(true){
         calculateDeltaTime();
 
         if(SDL_PollEvent(&windowEvent)){
             if(windowEvent.type == SDL_EVENT_QUIT){break;}
-            if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key);}
+            if(windowEvent.type == SDL_EVENT_KEY_DOWN){
+                onKeyDown(windowEvent.key.key); 
+                if(windowEvent.key.key == SDLK_E) {
+                    new Projectile(*testProjectile, {8, 1}, {0, -5}, {8, 10}, {0, 0});
+                    SDL_Log("spawn projectile arc");
+                }
+            }
             if(windowEvent.type == SDL_EVENT_KEY_UP){onKeyUp(windowEvent.key.key);}
             if(windowEvent.type == SDL_EVENT_MOUSE_MOTION){onMouseMotion(windowEvent.motion);}
             if(windowEvent.type == SDL_EVENT_MOUSE_WHEEL){zoomCamera(windowEvent.wheel.y);}
@@ -280,10 +318,12 @@ int main(int argc, char *argv[]){
         else {findSelectedTile();}
 
         for (Unit* u : units){u->update();}
+        for (Projectile* p : projectiles){p->update();}
 
         if(dirtyMap)sortTilePoints(renderer);
         if(dirtyHighlights)sortHighlight(renderer);
         if(dirtyUnits)sortUnits(renderer);
+        if(dirtyProjectiles)sortProjectiles(renderer);
         if(dirtyUi)sortUiElements(renderer);
         render(renderer, window);
     }

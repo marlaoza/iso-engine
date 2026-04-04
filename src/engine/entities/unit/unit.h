@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <unordered_set>
 #include <map>
 #include "SDL_rect.h"
 #include <string>
@@ -17,7 +17,8 @@
 struct UnitData {
     std::map<std::string, Animation*> animations;
     SpriteSheet* expressionSheet;
-    int baseHeight, baseWidth, baseHP, baseSpeed, baseShield;
+    float baseWidth, baseHeight;
+    int baseHP, baseSpeed, baseShield;
 };
 
 class Unit : public Entity{       
@@ -46,7 +47,6 @@ class Unit : public Entity{
 
         void calculatePreview(SDL_Point target);
 
-        void move() override;
 
     private:
         SpriteSheet* expressionSheet;
@@ -55,6 +55,8 @@ class Unit : public Entity{
         int getSkillDependentValue(SkillDependency dep, int base);
 
         void setTile(SDL_Point target) override;
+
+        void move() override;
 };
 
 extern bool dirtyUnits;
@@ -62,7 +64,7 @@ extern bool dirtyUnits;
 extern Unit* SELECTED_UNIT;
 extern Unit* HOVERED_UNIT;
 
-extern std::vector<Unit*> units;
+extern std::unordered_set<Unit*> units;
 extern Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
 void sortUnits(SDL_GPUDevice* renderer);

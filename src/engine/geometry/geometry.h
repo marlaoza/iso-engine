@@ -30,7 +30,8 @@ struct IsoObject {
     SDL_FPoint wall[6];
 };
 
-std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize = 0);
+std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize = 0, bool checkWalkability = true);
+std::vector<SDL_Point> getStraightPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize = 0, bool checkWalkability = true);
 std::vector<SDL_Point> getDiamond(SDL_Point origin, int maxSize, int minSize = 0, bool checkWalkability = false);
 std::vector<SDL_Point> getLine(SDL_Point origin, Direction direction, int maxSize, int minSize = 0, bool checkWalkability = false);
 std::vector<SDL_Point> getCross(SDL_Point origin, int maxSize, int minSize = 0, bool checkWalkability = false);

@@ -65,6 +65,10 @@ SDL_GPUBuffer* unitVBuf;
 SDL_GPUBuffer* unitIBuf;
 int unitIndexSize = 0;
 
+SDL_GPUBuffer* projectileVBuf;
+SDL_GPUBuffer* projectileIBuf;
+int projectileIndexSize = 0;
+
 SDL_GPUBuffer* UIVBuf;
 SDL_GPUBuffer* UIIBuf;
 int UIIndexSize = 0;
@@ -394,9 +398,9 @@ void createEntityPipeline(SDL_GPUDevice* renderer, SDL_Window* window)
     SDL_GPUTextureCreateInfo texInfo = {};
     texInfo.type = SDL_GPU_TEXTURETYPE_2D_ARRAY;
     texInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-    texInfo.width = 255;
-    texInfo.height = 255;
-    texInfo.layer_count_or_depth = 255;
+    texInfo.width = 256;
+    texInfo.height = 256;
+    texInfo.layer_count_or_depth = 256;
     texInfo.num_levels = 1;
     texInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
 
@@ -699,6 +703,9 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
         SDL_GPUBufferBinding unitVBinding = { .buffer = unitVBuf, .offset = 0 };
         SDL_GPUBufferBinding unitIBinding = { .buffer = unitIBuf, .offset = 0 };
 
+        SDL_GPUBufferBinding projectileVBinding = { .buffer = projectileVBuf, .offset = 0 };
+        SDL_GPUBufferBinding projectileIBinding = { .buffer = projectileIBuf, .offset = 0 };
+
         SDL_GPUBufferBinding highlightVBinding = { .buffer = highlightVBuf, .offset = 0 };
         SDL_GPUBufferBinding highlightIBinding = { .buffer = highlightIBuf, .offset = 0 };
 
@@ -722,9 +729,14 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
         SDL_BindGPUGraphicsPipeline(renderPass, entityPipeline); 
         SDL_GPUTextureSamplerBinding unitBinding = { .texture = unitTextureArray, .sampler = unitSampler };
         SDL_BindGPUFragmentSamplers(renderPass, 0, &unitBinding, 1);
+
         SDL_BindGPUVertexBuffers(renderPass, 0, &unitVBinding, 1);
         SDL_BindGPUIndexBuffer(renderPass, &unitIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
         SDL_DrawGPUIndexedPrimitives(renderPass, unitIndexSize, 1, 0, 0, 0);
+
+        SDL_BindGPUVertexBuffers(renderPass, 0, &projectileVBinding, 1);
+        SDL_BindGPUIndexBuffer(renderPass, &projectileIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+        SDL_DrawGPUIndexedPrimitives(renderPass, projectileIndexSize, 1, 0, 0, 0);
 
         SDL_EndGPURenderPass(renderPass);
 
@@ -811,6 +823,13 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     unitVBuf = SDL_CreateGPUBuffer(renderer, &unitVInfo);
     unitIBuf = SDL_CreateGPUBuffer(renderer, &unitIInfo);
 
+    size_t projectileVertSize = MAX_UNITS * 4 * sizeof(Entity_Vertex);
+    size_t projectileIndexSize = MAX_UNITS * 6 * sizeof(int);
+    SDL_GPUBufferCreateInfo projectileVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)projectileVertSize };
+    SDL_GPUBufferCreateInfo projectileIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)projectileIndexSize };
+    projectileVBuf = SDL_CreateGPUBuffer(renderer, &projectileVInfo);
+    projectileIBuf = SDL_CreateGPUBuffer(renderer, &projectileIInfo);
+
     size_t UIVertSize = MAX_UI_ELEMENTS * 4 * sizeof(UI_Vertex);
     size_t UIBufferIndexSize = MAX_UI_ELEMENTS * 6 * sizeof(int);
     SDL_GPUBufferCreateInfo UIVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)UIVertSize };
@@ -835,6 +854,8 @@ void destroyRenderer(SDL_GPUDevice* renderer){
     SDL_ReleaseGPUBuffer(renderer,tileIBuf);
     SDL_ReleaseGPUBuffer(renderer,unitVBuf);
     SDL_ReleaseGPUBuffer(renderer,unitIBuf);
+    SDL_ReleaseGPUBuffer(renderer, projectileVBuf);
+    SDL_ReleaseGPUBuffer(renderer, projectileIBuf);
     SDL_ReleaseGPUBuffer(renderer,highlightVBuf);
     SDL_ReleaseGPUBuffer(renderer,highlightIBuf);
     SDL_ReleaseGPUBuffer(renderer,textVBuf);

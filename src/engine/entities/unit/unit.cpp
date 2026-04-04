@@ -13,7 +13,7 @@
 
 bool dirtyUnits = false;
 
- Unit::Unit(const std::string& name, SDL_Point gridPos, const UnitData& uData) {
+ Unit::Unit(const std::string& name, SDL_Point gridPos, const UnitData& uData) : Entity() {
     this->id = units.size();
     this->name = name;
     this->gridOffset = {0, 0};
@@ -27,32 +27,20 @@ bool dirtyUnits = false;
     this->shield = uData.baseShield;
     this->animations = uData.animations;
     this->expressionSheet = uData.expressionSheet;
-    this->state = EntityState::Idle;
-    this->direction = Direction::Down;
     this->selectedSkill = -1;
-
-    this->currentClip = nullptr;
-    this->clipStartFrame = 0;
-    
-    this->targetPos = {-1, -1};
-    this->targetPool = {};
-    this->poolIndex = 0;
 
     this->skills.push_back(new Skill(CreateMoveSkill()));
     this->skills.push_back(new Skill(CreateSampleSkill()));
 
-    units.push_back(this);
+    units.insert(this);
     unitMap[gridPos.y*BOARD_WIDTH + gridPos.x] = this;
     dirtyUnits = true;
 }
 
 Unit::~Unit() {
-    for (Skill* s : skills) {
-        delete s;
-    }
     skills.clear();
-
     unitMap[gridPos.y * BOARD_WIDTH + gridPos.x] = nullptr;
+    units.erase(this);
     dirtyUnits = true;
 }
 
@@ -282,7 +270,7 @@ void Unit::setTile(SDL_Point target){
 Unit* SELECTED_UNIT;
 Unit* HOVERED_UNIT;
 
-std::vector<Unit*> units;
+std::unordered_set<Unit*> units;
 Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
 void sortUnits(SDL_GPUDevice* renderer){
@@ -313,9 +301,9 @@ void sortUnits(SDL_GPUDevice* renderer){
         SDL_FPoint ptr = {tl.x, tl.y + (TILE_SIZE/2)};
         SDL_FPoint points_p[4] = {
             {ptr.x - u->width, ptr.y - u->height},
-            {ptr.x + u->width +1, ptr.y - u->height},
+            {ptr.x + u->width, ptr.y - u->height},
             {ptr.x - u->width, ptr.y},
-            {ptr.x + u->width +1, ptr.y},
+            {ptr.x + u->width, ptr.y},
         };
 
         int indexSum = 0;

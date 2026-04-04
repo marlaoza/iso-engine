@@ -3,6 +3,20 @@
 #include "highlight/highlight.h"
 #include <cmath>
 
+
+Entity::Entity(){
+    this->currentClip = nullptr;
+    this->clipStartFrame = 0;
+    
+    this->targetPos = {-1, -1};
+    this->targetPool = {};
+    this->poolIndex = 0;
+
+    this->moveSpeed = 60.0f;
+
+    this->direction = Direction::Down;
+    this->state = EntityState::Idle;
+}
 void Entity::setTile(SDL_Point target){
     this->lastPos = gridPos;
     this->gridOffset = {0, 0};
@@ -27,7 +41,6 @@ Animation& Entity::getCurrentAnimation(){
 
 void Entity::setPath(std::vector<SDL_Point> path){
     if(path.size() <= 0) return;
-    printf("%d | vai se mover %d casas\n",this->id, path.size());
     this->poolIndex = 0;
     this->targetPool = std::move(path);
     if(this->targetPool.size() > 0){
@@ -46,8 +59,8 @@ void Entity::move(){
     float dist = sqrtf(distX*distX + distY*distY);
     
     if(dist > 0.5f){ 
-        this->gridOffset.x -= (distX / dist) * 40.0f * DELTA_TIME;
-        this->gridOffset.y -= (distY / dist) * 40.0f * DELTA_TIME;
+        this->gridOffset.x -= (distX / dist) * this->moveSpeed * DELTA_TIME;
+        this->gridOffset.y -= (distY / dist) * this->moveSpeed * DELTA_TIME;
     } else {
         this->setTile(this->targetPos);
         this->poolIndex ++;

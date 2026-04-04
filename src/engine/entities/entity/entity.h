@@ -20,8 +20,9 @@ class Entity{
         int id;
         SDL_FPoint gridOffset;
         SDL_Point gridPos;
-        int height;
-        int width;
+        float height;
+        float width;
+        
         Direction direction;
 
         EntityState state;
@@ -31,7 +32,6 @@ class Entity{
         virtual void update();
 
         void setPath(std::vector<SDL_Point> path);
-        virtual void move();
 
         virtual Animation& getCurrentAnimation();
 
@@ -39,6 +39,7 @@ class Entity{
         Animation* currentClip;
         int getClipStartFrame();
 
+        Entity();
         virtual ~Entity() = default;
 
     protected:
@@ -47,7 +48,10 @@ class Entity{
         std::vector<SDL_Point> targetPool;
         SDL_Point lastPos;
         int poolIndex;
+        float moveSpeed;
 
         int clipStartFrame;
         virtual void setTile(SDL_Point target);
+
+        virtual void move();
 };

@@ -11,7 +11,7 @@ class Unit;
 extern Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
 
-std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize){
+std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize, bool checkWalkability){
     std::vector<SDL_Point> path;
 
     SDL_Point pathArr[maxSize+1];
@@ -42,8 +42,8 @@ std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, 
             if (n.x < 0 || n.x >= BOARD_WIDTH || n.y < 0 || n.y >= BOARD_HEIGHT) continue;
             int nId = n.y * BOARD_WIDTH + n.x;
             if(checked[nId]) continue;
-            if(unitMap[nId] != nullptr) continue;
-            if(tiles[nId].height - tiles[curId].height > 1) continue;
+            if(unitMap[nId] != nullptr && checkWalkability) continue;
+            if((tiles[nId].height - tiles[curId].height > 1) && checkWalkability) continue;
             int dx = target.x - n.x;
             int dy = target.y - n.y;
             int nDist = abs(dx) + abs(dy);
@@ -83,6 +83,25 @@ std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, 
     
     return path;
 
+}
+std::vector<SDL_Point> getStraightPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize, bool checkWalkability)
+{
+    std::vector<SDL_Point> path;
+
+    path.push_back(origin);
+    SDL_Point o = origin;
+    while(o.x != target.x || o.y != target.y){
+        
+        if(o.x < target.x){o.x += 1;}
+        else if(o.x > target.x){ o.x -= 1;}
+
+        if(o.y < target.y){o.y += 1;}
+        else if(o.y > target.y){ o.y -= 1;}
+
+        path.push_back(o);
+    }
+
+    return path;
 }
 std::vector<SDL_Point> getDiamond(SDL_Point origin, int maxSize, int minSize, bool checkWalkability){
     std::vector<SDL_Point> reachMap;
