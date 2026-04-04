@@ -22,6 +22,8 @@ class Entity{
         SDL_Point gridPos;
         float height;
         float width;
+
+        int baseAnimSpeed;
         
         Direction direction;
 

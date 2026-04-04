@@ -17,6 +17,23 @@
 
 #include "constants.h"
 
+//TODO
+//spells com projeteis
+//sistema de particulas
+//projeteis com particulas
+//ui manager
+//unit manager
+//interaction manager ? ou deixar selected tile no input manager
+//entity unificação com alguma classe pois muito do processo é igual 
+//efeitos de tile
+//salas obscurecidas (pode ser com os efeitos de tile (nevoa, etc))
+
+//arquivos pra salvar os prefabs
+//unitdata.h    
+//animation.h
+//projectilesdata.h
+//skilldata.h
+//ou algo do genero
 
 bool watcher(void *userdata, SDL_Event* event){
     if(event->type == SDL_EVENT_WINDOW_RESIZED){
@@ -173,7 +190,6 @@ void toggleUnitUI(SDL_GPUDevice* renderer){
     else{SelectedUnitUI->setVisible(true);}
 }
 
-
 UnitData* test;
 
 ProjectileData* testProjectile;
@@ -191,6 +207,7 @@ void createPrefabs(){
         3,
         18,
         48,
+        1
     };
     std::map<std::string, Animation*> testAnimations;
     testAnimations["idle"] = testIdle;
@@ -214,6 +231,7 @@ void createPrefabs(){
         8,
         22,
         22,
+        1
     };
 
     testProjectile = new ProjectileData{
@@ -262,8 +280,7 @@ int main(int argc, char *argv[]){
             if(windowEvent.type == SDL_EVENT_KEY_DOWN){
                 onKeyDown(windowEvent.key.key); 
                 if(windowEvent.key.key == SDLK_E) {
-                    new Projectile(*testProjectile, {8, 1}, {0, -5}, {8, 10}, {0, 0});
-                    SDL_Log("spawn projectile arc");
+                    new Projectile(*testProjectile, {8, 1}, {-5, -10}, {8, 10}, {0, 0});
                 }
             }
             if(windowEvent.type == SDL_EVENT_KEY_UP){onKeyUp(windowEvent.key.key);}
@@ -319,6 +336,11 @@ int main(int argc, char *argv[]){
 
         for (Unit* u : units){u->update();}
         for (Projectile* p : projectiles){p->update();}
+
+        if(projectileDeleteList.size() > 0){
+            for (Projectile* p : projectileDeleteList){delete p;}
+            projectileDeleteList.clear();
+        }
 
         if(dirtyMap)sortTilePoints(renderer);
         if(dirtyHighlights)sortHighlight(renderer);

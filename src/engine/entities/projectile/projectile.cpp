@@ -7,6 +7,7 @@ Projectile::Projectile(const ProjectileData& pData, SDL_Point origin, SDL_FPoint
     this->width = pData.width;
     this->height = pData.height;
     this->moveSpeed = pData.speed;
+    this->baseAnimSpeed = 18;
 
     this->z = 0.0;
 
@@ -104,6 +105,7 @@ void Projectile::move(){
         }else{
             this->targetPool.clear();
             this->state = EntityState::Idle;
+            projectileDeleteList.push_back(this);
         }
     }
     
@@ -111,6 +113,7 @@ void Projectile::move(){
 }
 
 std::unordered_set<Projectile*> projectiles;
+std::vector<Projectile*> projectileDeleteList;
 
 void sortProjectiles(SDL_GPUDevice* renderer){
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
@@ -161,7 +164,7 @@ void sortProjectiles(SDL_GPUDevice* renderer){
             {0.0f, 1.0f},{1.0f, 1.0f}
         };
 
-        for (int i = 0; i < 4; i++){vertices.push_back({points_p[i], UVS[i], anim.sheet->id, anim.frameWidth, anim.frameHeight, anim.frames, 0, 18, p->gridPos.x + p->gridPos.y, indexSum});}
+        for (int i = 0; i < 4; i++){vertices.push_back({points_p[i], UVS[i], anim.sheet->id, anim.frameWidth, anim.frameHeight, anim.frames, 0, p->baseAnimSpeed * anim.speed, p->gridPos.x + p->gridPos.y, indexSum});}
         indices.push_back(vertexOffset);
         indices.push_back(vertexOffset + 1);
         indices.push_back(vertexOffset + 2);
@@ -172,30 +175,32 @@ void sortProjectiles(SDL_GPUDevice* renderer){
         vertexOffset+=4;
     }
 
-
     projectileIndexSize = (Uint32)indices.size();
 
+    if(projectileIndexSize > 0){
 
-    size_t vertSize = vertices.size() * sizeof(Entity_Vertex);
-    size_t indexSize = indices.size() * sizeof(int);
-    if(vertSize > 0){
-        memcpy(buffPtr + 0, vertices.data(), vertSize);
+        size_t vertSize = vertices.size() * sizeof(Entity_Vertex);
+        size_t indexSize = indices.size() * sizeof(int);
+        if(vertSize > 0){
+            memcpy(buffPtr + 0, vertices.data(), vertSize);
+        }
+        if(indexSize > 0){
+            memcpy((Uint8*)buffPtr + vertSize, indices.data(), indexSize);
+        }
+
+        SDL_GPUTransferBufferLocation vertSrc = { tbuf, 0 };
+        SDL_GPUBufferRegion vertDst = { projectileVBuf,  0, (Uint32)vertSize};
+        SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
+
+        SDL_GPUTransferBufferLocation indexSrc = { tbuf, (Uint32)vertSize };
+        SDL_GPUBufferRegion indexDst = { projectileIBuf,  0, (Uint32)indexSize};
+        SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
+        
+        SDL_UnmapGPUTransferBuffer(renderer, tbuf);
+        SDL_EndGPUCopyPass(copyPass);
+        SDL_SubmitGPUCommandBuffer(cmd);
+        SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
     }
-    if(indexSize > 0){
-        memcpy((Uint8*)buffPtr + vertSize, indices.data(), indexSize);
-    }
-
-    SDL_GPUTransferBufferLocation vertSrc = { tbuf, 0 };
-    SDL_GPUBufferRegion vertDst = { projectileVBuf,  0, (Uint32)vertSize};
-    SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
-
-    SDL_GPUTransferBufferLocation indexSrc = { tbuf, (Uint32)vertSize };
-    SDL_GPUBufferRegion indexDst = { projectileIBuf,  0, (Uint32)indexSize};
-    SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
-    
-    SDL_UnmapGPUTransferBuffer(renderer, tbuf);
-    SDL_EndGPUCopyPass(copyPass);
-    SDL_SubmitGPUCommandBuffer(cmd);
-    SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
     dirtyProjectiles = false;
+
 }

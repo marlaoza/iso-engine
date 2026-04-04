@@ -10,6 +10,7 @@ struct Animation {
     SpriteSheet* sheet;
     int frames;
     int frameWidth, frameHeight;
+    int speed;
 };
 
 

@@ -16,6 +16,7 @@ Entity::Entity(){
 
     this->direction = Direction::Down;
     this->state = EntityState::Idle;
+    this->baseAnimSpeed = 1;
 }
 void Entity::setTile(SDL_Point target){
     this->lastPos = gridPos;
