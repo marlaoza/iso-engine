@@ -16,7 +16,7 @@ enum class EffectType {
     Create,
     Damage,
     Heal,
-    Move,
+    Knockback,
     Pathfind,
     Stat,
 };

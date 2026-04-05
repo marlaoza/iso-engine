@@ -1,6 +1,6 @@
 #include "entity.h"
 #include "managers/frameManager/frameManager.h"
-#include "highlight/highlight.h"
+#include "effects/highlight/highlight.h"
 #include <cmath>
 
 
@@ -56,7 +56,7 @@ void Entity::move(){
     float dist = sqrtf(distX*distX + distY*distY);
     
     int cMoveSpeed = this->moveSpeed;
-    if(this->state == EntityState::ForcedMoving){cMoveSpeed *= 2;}
+    if(this->state == EntityState::ForcedMoving){cMoveSpeed = 300;}
 
     float step = cMoveSpeed * DELTA_TIME;
 

@@ -4,11 +4,13 @@
 #include "render/render.h"
 #include "map/map.h"
 #include "ui/ui.h"
-#include "highlight/highlight.h"
 #include "sprite/sprite.h"
 
 #include "entities/unit/unit.h"
 #include "entities/projectile/projectile.h"
+
+#include "effects/highlight/highlight.h"
+#include "effects/particle/particle.h"
 
 #include "managers/inputmanager/inputManager.h"
 #include "managers/dialogmanager/dialogManager.h"
@@ -249,7 +251,7 @@ int main(int argc, char *argv[]){
 
     toggleUnitUI(renderer);
     sortTilePoints(renderer);
-
+    loadParticleQuad(renderer);
     SDL_Event windowEvent;
 
     
@@ -258,7 +260,11 @@ int main(int argc, char *argv[]){
 
         if(SDL_PollEvent(&windowEvent)){
             if(windowEvent.type == SDL_EVENT_QUIT){break;}
-            if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key);}
+            if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key); if(windowEvent.key.key == SDLK_E) {
+                if(SELECTED_TILE.x >= 0 && SELECTED_TILE.y >= 0){
+                    Particle* p = new Particle(SELECTED_TILE, ParticleType::Line);
+                }
+            }}
             if(windowEvent.type == SDL_EVENT_KEY_UP){onKeyUp(windowEvent.key.key);}
             if(windowEvent.type == SDL_EVENT_MOUSE_MOTION){onMouseMotion(windowEvent.motion);}
             if(windowEvent.type == SDL_EVENT_MOUSE_WHEEL){zoomCamera(windowEvent.wheel.y);}
@@ -322,6 +328,7 @@ int main(int argc, char *argv[]){
         if(dirtyHighlights)sortHighlight(renderer);
         if(dirtyUnits)sortUnits(renderer);
         if(dirtyProjectiles)sortProjectiles(renderer);
+        if(dirtyParticles)sortParticles(renderer);
         if(dirtyUi)sortUiElements(renderer);
         render(renderer, window);
     }

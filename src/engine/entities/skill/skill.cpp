@@ -85,10 +85,10 @@ void loadSkillPrefabs(){
         {{
             EffectTarget::Unit,
             Shape::Diamond,
-            EffectType::Move,
+            EffectType::Knockback,
             SkillDependency::None,
             SkillDependency::None,
-            5,
+            3,
             3,
             {}
         }} 

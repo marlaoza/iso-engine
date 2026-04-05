@@ -49,3 +49,5 @@ src/assets/shaders/entity/shadow/fragShader
 src/assets/shaders/entity/shadow/vertShader
 src/assets/shaders/ui/text/fragShader
 src/assets/shaders/ui/text/vertShader
+src/assets/shaders/particle/fragShader
+src/assets/shaders/particle/vertShader

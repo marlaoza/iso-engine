@@ -52,6 +52,8 @@ SDL_GPUGraphicsPipeline* entityPipeline;
 SDL_GPUGraphicsPipeline* entityShadowPipeline;
 SDL_GPUGraphicsPipeline* UIPipeline;
 SDL_GPUGraphicsPipeline* textPipeline;
+SDL_GPUGraphicsPipeline* particlePipeline;
+
 
 SDL_GPUBuffer* tileVBuf;
 SDL_GPUBuffer* tileIBuf;
@@ -60,6 +62,12 @@ int tileIndexSize = 0;
 SDL_GPUBuffer* highlightVBuf;
 SDL_GPUBuffer* highlightIBuf;
 int highLightIndexSize = 0;
+
+SDL_GPUBuffer* particleVBuf;
+SDL_GPUBuffer* particleIBuf;
+SDL_GPUBuffer* particleFBuf;
+int particleIndexSize = 0;
+int particleDataSize = 0;
 
 SDL_GPUBuffer* unitVBuf;
 SDL_GPUBuffer* unitIBuf;
@@ -675,6 +683,118 @@ void loadUISpriteSheet(SDL_GPUDevice* renderer, const char* path){
     textUiSampler = SDL_CreateGPUSampler(renderer, &textSamplerInfo);
 }
 
+SDL_GPUTexture* particleTextureArray;
+SDL_GPUSampler* particleSampler;
+void createParticlePipeline(SDL_GPUDevice* renderer, SDL_Window* window){
+
+    SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
+    SDL_GPUVertexAttribute attributes[8];
+
+    //VERTEX
+    attributes[0].location = 0;
+    attributes[0].buffer_slot = 0;
+    attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;  //POS
+    attributes[0].offset = 0;
+
+    attributes[1].location = 1;
+    attributes[1].buffer_slot = 0;
+    attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;  //UV
+    attributes[1].offset = (sizeof(float)*2);
+
+    //PARTICLE INSTANCE
+    attributes[2].location = 2;
+    attributes[2].buffer_slot = 1;
+    attributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;   //PARTICLE POS
+    attributes[2].offset = 0;
+
+    attributes[3].location = 3;
+    attributes[3].buffer_slot = 1;
+    attributes[3].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;  //PARTICLE GRID POS
+    attributes[3].offset = (sizeof(float)*2);
+
+    attributes[4].location = 4;
+    attributes[4].buffer_slot = 1;
+    attributes[4].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;  //X,Y VELOCITY
+    attributes[4].offset = (sizeof(float)*2) + (sizeof(int)*2);
+
+    attributes[5].location = 5;
+    attributes[5].buffer_slot = 1;
+    attributes[5].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT;   //INSTANCE TIME
+    attributes[5].offset = (sizeof(float)*4) + (sizeof(int)*2);
+
+    attributes[6].location = 6;
+    attributes[6].buffer_slot = 1;
+    attributes[6].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT;   //LIFE TIME
+    attributes[6].offset = (sizeof(float)*5) + (sizeof(int)*2);
+
+    attributes[7].location = 7;
+    attributes[7].buffer_slot = 1;
+    attributes[7].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT;   //SIZE
+    attributes[7].offset = (sizeof(float)*6) + (sizeof(int)*2);
+    
+    pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/particle/vertShader", SDL_GPU_SHADERSTAGE_VERTEX, 0);
+    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/particle/fragShader", SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
+
+    SDL_GPUVertexBufferDescription binding_desc[2];
+    binding_desc[0].slot = 0;
+    binding_desc[0].pitch = sizeof(Particle_Vertex); 
+    binding_desc[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+
+    binding_desc[1].slot = 1;
+    binding_desc[1].pitch = sizeof(Particle_Data);
+    binding_desc[1].input_rate = SDL_GPU_VERTEXINPUTRATE_INSTANCE;
+
+    pipelineInfo.vertex_input_state.num_vertex_buffers = 2;
+    pipelineInfo.vertex_input_state.vertex_buffer_descriptions = binding_desc;
+
+    pipelineInfo.vertex_input_state.vertex_attributes = attributes;
+    pipelineInfo.vertex_input_state.num_vertex_attributes = 8;
+
+    pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+
+    pipelineInfo.target_info.num_color_targets = 1;
+    pipelineInfo.target_info.color_target_descriptions = (SDL_GPUColorTargetDescription[]){{
+        .format = SDL_GetGPUSwapchainTextureFormat(renderer, window),
+        .blend_state = { 
+            .src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA,
+            .dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
+            .color_blend_op = SDL_GPU_BLENDOP_ADD,
+            .src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
+            .dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ZERO,
+            .alpha_blend_op = SDL_GPU_BLENDOP_ADD,
+            .enable_blend = true,
+        }
+    }};
+
+    pipelineInfo.depth_stencil_state.enable_depth_test = true;
+    pipelineInfo.depth_stencil_state.enable_depth_write = false;
+    pipelineInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS; 
+
+    pipelineInfo.target_info.has_depth_stencil_target = true;
+    pipelineInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT;
+
+    particlePipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
+    if (particlePipeline == NULL) {SDL_Log("Particle Pipeline creation failed: %s", SDL_GetError());}
+
+    SDL_GPUTextureCreateInfo texInfo = {};
+    texInfo.type = SDL_GPU_TEXTURETYPE_2D_ARRAY;
+    texInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+    texInfo.width = 256;
+    texInfo.height = 256;
+    texInfo.layer_count_or_depth = 256;
+    texInfo.num_levels = 1;
+    texInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
+
+    particleTextureArray = SDL_CreateGPUTexture(renderer, &texInfo);
+
+    SDL_GPUSamplerCreateInfo samplerInfo = {};
+    samplerInfo.min_filter = SDL_GPU_FILTER_NEAREST;
+    samplerInfo.mag_filter = SDL_GPU_FILTER_NEAREST;
+    samplerInfo.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    samplerInfo.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    particleSampler = SDL_CreateGPUSampler(renderer, &samplerInfo);
+}
+
 void render(SDL_GPUDevice* renderer, SDL_Window* window){
     if(renderer == NULL){return;}
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
@@ -714,6 +834,12 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
         SDL_GPUBufferBinding highlightVBinding = { .buffer = highlightVBuf, .offset = 0 };
         SDL_GPUBufferBinding highlightIBinding = { .buffer = highlightIBuf, .offset = 0 };
 
+        SDL_GPUBufferBinding particleBindings[2] = { 
+            { particleVBuf, 0 }, 
+            { particleFBuf, 0 } 
+        };
+        SDL_GPUBufferBinding particleIBinding = { .buffer = particleIBuf, .offset = 0 };
+
         SDL_GPUBufferBinding UIVBinding = { .buffer = UIVBuf, .offset = 0 };
         SDL_GPUBufferBinding UIIBinding = { .buffer = UIIBuf, .offset = 0 };
 
@@ -742,6 +868,11 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
         SDL_BindGPUVertexBuffers(renderPass, 0, &projectileVBinding, 1);
         SDL_BindGPUIndexBuffer(renderPass, &projectileIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
         SDL_DrawGPUIndexedPrimitives(renderPass, projectileIndexSize, 1, 0, 0, 0);
+
+        SDL_BindGPUGraphicsPipeline(renderPass, particlePipeline); 
+        SDL_BindGPUVertexBuffers(renderPass, 0, particleBindings, 2);
+        SDL_BindGPUIndexBuffer(renderPass, &particleIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+        SDL_DrawGPUIndexedPrimitives(renderPass, particleIndexSize, particleDataSize, 0, 0, 0);
 
         SDL_EndGPURenderPass(renderPass);
 
@@ -799,6 +930,7 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     createDepthTexture(renderer, WIDTH, HEIGHT);
     createPipeline(renderer, window);
     createHighLightPipeline(renderer,window);
+    createParticlePipeline(renderer, window);
     createEntityPipeline(renderer, window);
     loadUnitSheet("src/assets/unit_sprites/base_idle.png");
 
@@ -820,6 +952,16 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     SDL_GPUBufferCreateInfo highlightIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)highlightIndexSize };
     highlightVBuf = SDL_CreateGPUBuffer(renderer, &highlightVInfo);
     highlightIBuf = SDL_CreateGPUBuffer(renderer, &highlightIInfo);
+
+    size_t particleVertSize = 4 * sizeof(Particle_Vertex);
+    size_t particleIndexSize = 6 * sizeof(int);
+    size_t particleFragmentSize = BOARD_HEIGHT*BOARD_WIDTH * 200 * sizeof(Particle_Data);
+    SDL_GPUBufferCreateInfo particleVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)particleVertSize };
+    SDL_GPUBufferCreateInfo particleIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)particleIndexSize };
+    SDL_GPUBufferCreateInfo particleFInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)particleFragmentSize };
+    particleVBuf = SDL_CreateGPUBuffer(renderer, &particleVInfo);
+    particleIBuf = SDL_CreateGPUBuffer(renderer, &particleIInfo);
+    particleFBuf = SDL_CreateGPUBuffer(renderer, &particleFInfo);
 
     size_t unitVertSize = MAX_UNITS * 4 * sizeof(Entity_Vertex);
     size_t unitIndexSize = MAX_UNITS * 6 * sizeof(int);
@@ -863,6 +1005,8 @@ void destroyRenderer(SDL_GPUDevice* renderer){
     SDL_ReleaseGPUBuffer(renderer, projectileIBuf);
     SDL_ReleaseGPUBuffer(renderer,highlightVBuf);
     SDL_ReleaseGPUBuffer(renderer,highlightIBuf);
+    SDL_ReleaseGPUBuffer(renderer,particleVBuf);
+    SDL_ReleaseGPUBuffer(renderer,particleIBuf);
     SDL_ReleaseGPUBuffer(renderer,textVBuf);
     SDL_ReleaseGPUBuffer(renderer,textIBuf);
     

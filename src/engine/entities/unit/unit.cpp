@@ -9,7 +9,7 @@
 
 #include "entities/projectile/projectile.h"
 
-#include "highlight/highlight.h"
+#include "effects/highlight/highlight.h"
 #include "map/map.h"
 
 
@@ -185,7 +185,7 @@ void Unit::calculatePreview(SDL_Point selectedTile){
                     actionLine = getPath(start, end, range2);
                 break;
 
-                case EffectType::Move:
+                case EffectType::Knockback:
                 {
                     Direction pushDir = getDirection(p, origin);
                     actionLine = getLine(p, pushDir, range2, 0, true);
@@ -221,7 +221,7 @@ void applySkillEffects(Unit* caster, Skill* s){
             if(e.target != EffectTarget::Tile && pTarget == nullptr) continue;
             printf(" em %d\n",pTarget->id);
             switch(e.type){
-                case EffectType::Move:
+                case EffectType::Knockback:
                 case EffectType::Pathfind:
                     pTarget->setPath(ep.actionLines[j]);
                     if(e.target == EffectTarget::Unit) pTarget->state = EntityState::ForcedMoving;

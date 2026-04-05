@@ -36,6 +36,20 @@ struct Highlight_Vertex {
     int32_t gridX, gridY;
 };
 
+struct Particle_Vertex{
+    SDL_FPoint pos;
+    SDL_FPoint uv;
+};
+
+struct Particle_Data {
+    SDL_FPoint particlePos;
+    int32_t gridX, gridY;
+    float velX, velY;
+    float instanceTime;
+    float lifeTime;
+    float size;
+};
+
 struct UI_Vertex {
     SDL_FPoint pos;
     SDL_FPoint uv;
@@ -73,9 +87,6 @@ extern SDL_GPUGraphicsPipeline* pipeline;
 extern SDL_GPUGraphicsPipeline* UIPipeline;
 
 SDL_GPUShader* loadShader(SDL_GPUDevice* device, const char* fileName, SDL_GPUShaderStage stage, Uint32 samplers = 0);
-void createPipeline(SDL_GPUDevice* renderer, SDL_Window* window);
-void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window);
-void createUIPipeline(SDL_GPUDevice* renderer, SDL_Window* window);
 
 extern TTF_Font* font_main;
 
@@ -93,6 +104,12 @@ extern int tileIndexSize;
 extern SDL_GPUBuffer* highlightVBuf;
 extern SDL_GPUBuffer* highlightIBuf;
 extern int highLightIndexSize;
+
+extern SDL_GPUBuffer* particleVBuf;
+extern SDL_GPUBuffer* particleIBuf;
+extern SDL_GPUBuffer* particleFBuf;
+extern int particleIndexSize;
+extern int particleDataSize;
 
 extern SDL_GPUBuffer* unitVBuf;
 extern SDL_GPUBuffer* unitIBuf;
