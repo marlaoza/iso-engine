@@ -68,3 +68,5 @@ extern std::unordered_set<Unit*> units;
 extern Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
 void sortUnits(SDL_GPUDevice* renderer);
+
+void applySkillEffects(Unit* caster, Skill* s);

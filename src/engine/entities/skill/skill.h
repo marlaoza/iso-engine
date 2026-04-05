@@ -89,6 +89,7 @@ struct Skill {
 };
 
 extern Skill* moveSkill;
+extern Skill* grenadeSkill;
 
 void loadSkillPrefabs();
 

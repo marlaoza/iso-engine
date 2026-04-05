@@ -36,10 +36,13 @@ class Projectile : public Entity {
 
         float z;
 
+        std::function<void()> onLand;
+
         Animation& getCurrentAnimation() override;
     private:
         void move() override;
         void setTile(SDL_Point target) override;
+        void land();
         SDL_FPoint startPos;
         SDL_FPoint startOffset;
         SDL_FPoint endPos;

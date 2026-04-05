@@ -9,6 +9,8 @@ Projectile::Projectile(const ProjectileData& pData, SDL_Point origin, SDL_FPoint
     this->moveSpeed = pData.speed;
     this->baseAnimSpeed = 18;
 
+    this->onLand = nullptr;
+
     this->z = 0.0;
 
     this->gridPos = origin;
@@ -103,13 +105,18 @@ void Projectile::move(){
             this->targetPos = this->targetPool[this->poolIndex];
             this->direction = getDirection(this->gridPos, this->targetPos);
         }else{
-            this->targetPool.clear();
-            this->state = EntityState::Idle;
-            projectileDeleteList.push_back(this);
+            this->land();
         }
     }
     
     dirtyProjectiles = true;
+}
+
+void Projectile::land(){
+    if(this->onLand){this->onLand();}
+    this->targetPool.clear();
+    this->state = EntityState::Idle;
+    projectileDeleteList.push_back(this);
 }
 
 std::unordered_set<Projectile*> projectiles;

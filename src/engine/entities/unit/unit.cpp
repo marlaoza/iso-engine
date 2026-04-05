@@ -34,6 +34,7 @@ bool dirtyUnits = false;
     this->baseAnimSpeed = 2;
 
     this->skills.push_back(moveSkill);
+    this->skills.push_back(grenadeSkill);
 
     units.insert(this);
     unitMap[gridPos.y*BOARD_WIDTH + gridPos.x] = this;
@@ -181,6 +182,7 @@ void Unit::calculatePreview(SDL_Point selectedTile){
 
                 case EffectType::Move:
                 {
+                    printf("direction entity\n");
                     Direction pushDir = getDirection(p, origin);
                     actionLine = getLine(p, pushDir, range2, 0, true);
                 }
@@ -196,11 +198,43 @@ void Unit::calculatePreview(SDL_Point selectedTile){
         }
 
         e.preview = currentEp;
-        for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){addHighlight(p, 2+s->highlightPallete, s->highlightPallete);}}
         for(SDL_Point p : e.preview.affectedTiles){addHighlight(p, 3+s->highlightPallete, s->highlightPallete);}
+        for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){addHighlight(p, 2+s->highlightPallete, s->highlightPallete);}}
     }
 
     
+}
+
+void applySkillEffects(Unit* caster, Skill* s){
+    for (SkillEffect& e : s->effects)
+    {
+        EffectPreview ep = e.preview;
+        int j = 0;
+        for (SDL_Point p : ep.affectedTiles)
+        {
+            Unit* pTarget = unitMap[p.y * BOARD_WIDTH + p.x];
+            if(e.target == EffectTarget::Caster){pTarget = caster;}
+            if(e.target != EffectTarget::Tile && pTarget == nullptr) continue;
+            printf(" em %d\n",pTarget->id);
+            switch(e.type){
+                case EffectType::Move:
+                case EffectType::Pathfind:
+                    pTarget->setPath(ep.actionLines[j]);
+                    break;
+                case EffectType::Create:
+                    break;
+                case EffectType::Damage:
+                    break;
+                default:break;
+            }
+            j++;
+        }
+        for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
+        for(SDL_Point p : e.preview.affectedTiles){clearHighlight(p);}
+        e.preview.affectedTiles.clear();
+        e.preview.actionLines.clear();
+        
+    }
 }
 
 void Unit::castSkill(int skillId, SDL_Point selectedTile){
@@ -211,42 +245,17 @@ void Unit::castSkill(int skillId, SDL_Point selectedTile){
         printf("%d | usou a skill %s",this->id, s->name.c_str());
 
         if(s->projectileData != nullptr){
-            new Projectile(*s->projectileData, this->gridPos, {0, 0}, selectedTile, {0,0});
-        }
-
-        for (SkillEffect& e : s->effects)
-        {
-            EffectPreview ep = e.preview;
-
-            int j = 0;
-            for (SDL_Point p : ep.affectedTiles)
-            {
-                Unit* pTarget = unitMap[p.y * BOARD_WIDTH + p.x];
-                if(e.target == EffectTarget::Caster){pTarget = this;}
-
-                if(e.target != EffectTarget::Tile && pTarget == nullptr) continue;
-                printf(" em %d\n",pTarget->id);
-
-                switch(e.type){
-                    case EffectType::Move:
-                    case EffectType::Pathfind:
-                        pTarget->setPath(ep.actionLines[j]);
-                        break;
-                    case EffectType::Create:
-                        break;
-                    case EffectType::Damage:
-                        break;
-                    default:break;
-                }
-                j++;
-            }
-
-            for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
-            for(SDL_Point p : e.preview.affectedTiles){clearHighlight(p);}
-            e.preview.affectedTiles.clear();
-            e.preview.actionLines.clear();
+            Projectile* p = new Projectile(*s->projectileData, this->gridPos, {0, 0}, selectedTile, {0,0});
+            p->onLand = [this, s](){
+                applySkillEffects(this, s);
+            };
             
         }
+        else{
+            applySkillEffects(this, s);
+        }
+
+        
 
         for (SDL_Point p : this->reachMap){clearHighlight(p);}
 

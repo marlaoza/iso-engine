@@ -33,10 +33,6 @@ int Entity::getClipStartFrame(){return this->clipStartFrame;}
 
 Animation& Entity::getCurrentAnimation(){
     if(this->currentClip != nullptr){return *this->currentClip;}
-
-    if(this->state == EntityState::Moving){return *this->animations["idle"];}
-    if(this->state == EntityState::Casting){return *this->animations["idle"];}
-    
     return *this->animations["idle"];
 }
 
@@ -59,9 +55,12 @@ void Entity::move(){
     float distY = this->gridOffset.y - targetOffset.y;
     float dist = sqrtf(distX*distX + distY*distY);
     
+    int cMoveSpeed = this->moveSpeed;
+    if(this->state == EntityState::ForcedMoving){cMoveSpeed *= 2;}
+
     if(dist > 0.5f){ 
-        this->gridOffset.x -= (distX / dist) * this->moveSpeed * DELTA_TIME;
-        this->gridOffset.y -= (distY / dist) * this->moveSpeed * DELTA_TIME;
+        this->gridOffset.x -= (distX / dist) * cMoveSpeed * DELTA_TIME;
+        this->gridOffset.y -= (distY / dist) * cMoveSpeed * DELTA_TIME;
     } else {
         this->setTile(this->targetPos);
         this->poolIndex ++;
@@ -85,5 +84,5 @@ void Entity::update(){
         if(frameCheck - this->getClipStartFrame() >= this->currentClip->frames){ this->currentClip = nullptr;}
     }
 
-    if(this->state == EntityState::Moving) this->move();
+    if(this->state == EntityState::Moving || this->state == EntityState::ForcedMoving) this->move();
 }

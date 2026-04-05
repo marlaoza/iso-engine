@@ -12,7 +12,8 @@ enum class EntityState {
     Idle,
     Moving,
     Casting,
-    Selecting
+    Selecting,
+    ForcedMoving,
 };
 
 class Entity{

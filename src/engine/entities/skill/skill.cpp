@@ -4,9 +4,6 @@ std::vector<SDL_Point> getSkillEffectArea(SkillEffect e, SDL_Point origin, Direc
     std::vector<SDL_Point> path;
     
     bool walkability = false;
-    if(e.type == EffectType::Move){
-        walkability = true;
-    }
 
     switch (e.shape)
     {
@@ -40,6 +37,7 @@ std::vector<SDL_Point> getSkillEffectArea(SkillEffect e, SDL_Point origin, Direc
 }
 
 Skill* moveSkill;
+Skill * grenadeSkill;
 
 void loadSkillPrefabs(){
     moveSkill = new Skill
@@ -56,7 +54,7 @@ void loadSkillPrefabs(){
         false,
         CostType::MovePoints,
         CasterAnimation::None,
-        testProjectile,
+        nullptr,
         {{
             EffectTarget::Caster,
             Shape::Tile,
@@ -65,6 +63,33 @@ void loadSkillPrefabs(){
             SkillDependency::Speed,
             1,
             1,
+            {}
+        }} 
+    };
+
+    grenadeSkill = new Skill
+    {
+        0, 
+        SkillOrigin::Tile,
+        "Granada", 
+        "Explode em área", 
+        SkillDependency::None, 
+        2, 
+        3,8, 
+        0, 
+        false,
+        false,
+        CostType::ActionPoints,
+        CasterAnimation::None,
+        testProjectile,
+        {{
+            EffectTarget::Unit,
+            Shape::Diamond,
+            EffectType::Move,
+            SkillDependency::None,
+            SkillDependency::None,
+            5,
+            3,
             {}
         }} 
     };
