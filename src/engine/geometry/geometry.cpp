@@ -276,7 +276,7 @@ Direction getDirection(SDL_Point a, SDL_Point b){
     Direction direction = Direction::Left;
     SDL_Point directionPoint = {a.x - b.x, a.y - b.y};
 
-    if(directionPoint.y == 1 && directionPoint.x == 0)direction = Direction::Right;
+    if(directionPoint.y >= 1 && directionPoint.x == 0)direction = Direction::Right;
     else if(directionPoint.y < 0 && directionPoint.x == 0)direction = Direction::Left;
     else if(directionPoint.y >= 1 && directionPoint.x >= 1)direction = Direction::UpRight;
     else if(directionPoint.y < 0 && directionPoint.x >= 1)direction = Direction::UpLeft;
@@ -284,39 +284,36 @@ Direction getDirection(SDL_Point a, SDL_Point b){
     else if(directionPoint.y < 0 && directionPoint.x < 0)direction = Direction::DownLeft;
     else if(directionPoint.y == 0 && directionPoint.x >= 1)direction = Direction::Up;
     else if(directionPoint.y == 0 && directionPoint.x < 0)direction = Direction::Down;
-
+    
     return direction;
 }
 SDL_Point getDirectionVector(Direction d){
-    switch (d)
-    {
-    case Direction::Up:
-        return {-1, 0};
-        break;
-    case Direction::UpLeft:
-        return {-1, -1};
-        break;
-    case Direction::UpRight:
-        return {-1, 1};
-        break;
-    case Direction::Down:
-        return {1, 0};
-        break;
-    case Direction::DownLeft:
-        return {1, -1};
-        break;
-    case Direction::DownRight:
-        return {1, 1};
-        break;
-    case Direction::Left:
-        return {0, -1};
-        break;
-    case Direction::Right:
-        return {0, 1};
-        break;
-
-    
-    default:
-        break;
+    switch (d){
+        case Direction::Up:
+            return {1, 0};
+            break;
+        case Direction::UpLeft:
+            return {1, -1};
+            break;
+        case Direction::UpRight:
+            return {1, 1};
+            break;
+        case Direction::Down:
+            return {-1, 0};
+            break;
+        case Direction::DownLeft:
+            return {-1, -1};
+            break;
+        case Direction::DownRight:
+            return {-1, 1};
+            break;
+        case Direction::Left:
+            return {0, -1};
+            break;
+        case Direction::Right:
+            return {0, 1};
+            break;
+        default:
+            break;
     }
 }
