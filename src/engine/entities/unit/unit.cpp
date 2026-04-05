@@ -76,7 +76,7 @@ void Unit::desselect(){
 void Unit::hoverSkill(int skillId){
     this->offHoverSkill();
         
-    if(this->state == EntityState::Casting || this->state == EntityState::Moving || this->skills.size() <= 0 || this->skills.size() <= skillId) return;
+    if(this->state == EntityState::Casting || this->state == EntityState::Moving || this->state == EntityState::ForcedMoving || this->skills.size() <= 0 || this->skills.size() <= skillId) return;
     Skill* skill = this->skills[skillId];
     
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);
@@ -101,7 +101,7 @@ void Unit::offHoverSkill(){
 }
 
 void Unit::selectSkill(int skillId){
-    if(this->state == EntityState::Casting || this->state == EntityState::Moving || this->skills.size() <= 0) return;
+    if(this->state == EntityState::Casting || this->state == EntityState::Moving || this->state == EntityState::ForcedMoving || this->skills.size() <= 0) return;
     Skill* skill = this->skills[skillId];
 
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);    
@@ -146,7 +146,12 @@ void Unit::calculatePreview(SDL_Point selectedTile){
         e.preview.actionLines.clear();
     }
 
-    for (SDL_Point p : this->reachMap){addHighlight(p, 1+s->highlightPallete, s->highlightPallete);}
+    bool found = false;
+    for (SDL_Point p : this->reachMap){
+        if(p.x == selectedTile.x && p.y == selectedTile.y){found = true;}
+        addHighlight(p, 1+s->highlightPallete, s->highlightPallete);
+    }
+    if(!found){return;}
 
     Unit* targetOrigin = unitMap[selectedTile.y * BOARD_WIDTH + selectedTile.x];
 
@@ -182,7 +187,6 @@ void Unit::calculatePreview(SDL_Point selectedTile){
 
                 case EffectType::Move:
                 {
-                    printf("direction entity\n");
                     Direction pushDir = getDirection(p, origin);
                     actionLine = getLine(p, pushDir, range2, 0, true);
                 }
@@ -220,6 +224,7 @@ void applySkillEffects(Unit* caster, Skill* s){
                 case EffectType::Move:
                 case EffectType::Pathfind:
                     pTarget->setPath(ep.actionLines[j]);
+                    if(e.target == EffectTarget::Unit) pTarget->state = EntityState::ForcedMoving;
                     break;
                 case EffectType::Create:
                     break;
@@ -229,11 +234,9 @@ void applySkillEffects(Unit* caster, Skill* s){
             }
             j++;
         }
-        for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
-        for(SDL_Point p : e.preview.affectedTiles){clearHighlight(p);}
+        
         e.preview.affectedTiles.clear();
         e.preview.actionLines.clear();
-        
     }
 }
 
@@ -242,24 +245,34 @@ void Unit::castSkill(int skillId, SDL_Point selectedTile){
         if(selectedSkill < 0 || selectedSkill > (skills.size()-1)) return;
         Skill* s = this->skills[selectedSkill];
 
-        printf("%d | usou a skill %s",this->id, s->name.c_str());
+        bool found = false;
 
-        if(s->projectileData != nullptr){
-            Projectile* p = new Projectile(*s->projectileData, this->gridPos, {0, 0}, selectedTile, {0,0});
-            p->onLand = [this, s](){
+        for (SDL_Point p : this->reachMap){
+            if(p.x == selectedTile.x && p.y == selectedTile.y){found = true;}
+            clearHighlight(p);
+        }
+
+        for (SkillEffect& e : s->effects){
+            for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
+            for(SDL_Point p : e.preview.affectedTiles){clearHighlight(p);}
+        }
+
+        if(found){
+            printf("%d | usou a skill %s",this->id, s->name.c_str());
+
+            if(s->projectileData != nullptr){
+                Projectile* p = new Projectile(*s->projectileData, this->gridPos, {0, 0}, selectedTile, {0,0});
+                p->onLand = [this, s](){
+                    applySkillEffects(this, s);
+                };
+                
+            }
+            else{
                 applySkillEffects(this, s);
-            };
-            
-        }
-        else{
-            applySkillEffects(this, s);
+            }
         }
 
-        
-
-        for (SDL_Point p : this->reachMap){clearHighlight(p);}
-
-        if(this->state != EntityState::Moving){
+        if(this->state != EntityState::Moving && this->state != EntityState::ForcedMoving){
             this->state = EntityState::Idle;
         }
         this->selectedSkill = -1;
@@ -324,12 +337,12 @@ void sortUnits(SDL_GPUDevice* renderer){
 
         int indexSum = 0;
 
-        if(u->state == EntityState::Moving){
+        if(u->state == EntityState::Moving || u->state == EntityState::ForcedMoving){
             SDL_FPoint normOffset = {fabs(u->gridOffset.x), fabs(u->gridOffset.y)};
             if(u->gridPos.x < u->targetPos.x){if(normOffset.x > (float)(TILE_SIZE/3.0f)){indexSum = 1;}}
-            if(u->gridPos.x > u->targetPos.x){if(normOffset.x > (float)(TILE_SIZE/1.5f)){indexSum = -1;}}
-            if(u->gridPos.y < u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/3.0f){indexSum = 1;}}
-            if(u->gridPos.y > u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/1.5f){indexSum = -1;}}
+            else if(u->gridPos.x > u->targetPos.x){if(normOffset.x > (float)(TILE_SIZE/1.5f)){indexSum = -1;}}
+            else if(u->gridPos.y < u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/3.0f){indexSum = 1;}}
+            else if(u->gridPos.y > u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/1.5f){indexSum = -1;}}
         }
 
         const Animation& anim = u->getCurrentAnimation();

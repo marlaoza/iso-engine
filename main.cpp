@@ -75,7 +75,7 @@ void findSelectedTile(){
         && (SELECTED_TILE.x != LAST_TILE.x || SELECTED_TILE.y != LAST_TILE.y)) {
         if(SELECTED_UNIT->state == EntityState::Casting) SELECTED_UNIT->calculatePreview(SELECTED_TILE);
         
-        if(SELECTED_UNIT->state != EntityState::Moving){
+        if(SELECTED_UNIT->state != EntityState::Moving && SELECTED_UNIT->state != EntityState::ForcedMoving){
             SELECTED_UNIT->direction = getDirection(SELECTED_UNIT->gridPos, SELECTED_TILE);
             dirtyUnits = true;
         }

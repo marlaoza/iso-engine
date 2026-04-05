@@ -12,7 +12,7 @@ Entity::Entity(){
     this->targetPool = {};
     this->poolIndex = 0;
 
-    this->moveSpeed = 60.0f;
+    this->moveSpeed = 70.0f;
 
     this->direction = Direction::Down;
     this->state = EntityState::Idle;
@@ -58,9 +58,11 @@ void Entity::move(){
     int cMoveSpeed = this->moveSpeed;
     if(this->state == EntityState::ForcedMoving){cMoveSpeed *= 2;}
 
-    if(dist > 0.5f){ 
-        this->gridOffset.x -= (distX / dist) * cMoveSpeed * DELTA_TIME;
-        this->gridOffset.y -= (distY / dist) * cMoveSpeed * DELTA_TIME;
+    float step = cMoveSpeed * DELTA_TIME;
+
+    if(dist > step && dist > 0.5f){ 
+        this->gridOffset.x -= (distX / dist) * step;
+        this->gridOffset.y -= (distY / dist) * step;
     } else {
         this->setTile(this->targetPos);
         this->poolIndex ++;
