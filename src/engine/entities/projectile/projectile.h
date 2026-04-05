@@ -49,3 +49,6 @@ class Projectile : public Entity {
 extern std::unordered_set<Projectile*> projectiles;
 extern std::vector<Projectile*> projectileDeleteList;
 void sortProjectiles(SDL_GPUDevice* renderer);
+
+extern ProjectileData* testProjectile;
+void loadProjectilePrefabs();

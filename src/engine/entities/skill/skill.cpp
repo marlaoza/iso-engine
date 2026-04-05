@@ -1,86 +1,5 @@
 #include "skill.h"
 
-Skill CreateMoveSkill() {
-    return {
-        0, 
-        SkillOrigin::Tile,
-        "Move", 
-        "Se Mova", 
-        SkillDependency::Speed, 
-        2, 
-        0,1, 
-        0, 
-        false,
-        false,
-        CostType::MovePoints,
-        {{
-            EffectTarget::Caster,
-            Shape::Tile,
-            EffectType::Pathfind,
-            SkillDependency::Speed,
-            SkillDependency::Speed,
-            1,
-            1,
-            {}
-        }} 
-    };
-}
-
-
-Skill CreateSampleSkill() {
-    return {
-        1, 
-        SkillOrigin::Unit,
-        "Test", 
-        "test", 
-        SkillDependency::None, 
-        2, 
-        0,5, 
-        0, 
-        true,
-        false,
-        CostType::ActionPoints,
-        {{
-            EffectTarget::Unit,
-            Shape::Tile,
-            EffectType::Pathfind,
-            SkillDependency::None,
-            SkillDependency::None,
-            4,
-            4,
-            {}
-        }} 
-    };
-}
-
-Skill CreateSampleSkill2() {
-    return {
-        2, 
-        SkillOrigin::Tile,
-        "push", 
-        "test", 
-        SkillDependency::None, 
-        2, 
-        0,5, 
-        0, 
-        true,
-        false,
-        CostType::ActionPoints,
-        {{
-            EffectTarget::Unit,
-            Shape::Tile,
-            EffectType::Move,
-            SkillDependency::None,
-            SkillDependency::None,
-            4,
-            4,
-            {}
-        }} 
-    };
-}
-
-
-
 std::vector<SDL_Point> getSkillEffectArea(SkillEffect e, SDL_Point origin, Direction direction, int range){
     std::vector<SDL_Point> path;
     
@@ -120,4 +39,34 @@ std::vector<SDL_Point> getSkillEffectArea(SkillEffect e, SDL_Point origin, Direc
     return path;
 }
 
+Skill* moveSkill;
+
+void loadSkillPrefabs(){
+    moveSkill = new Skill
+    {
+        0, 
+        SkillOrigin::Tile,
+        "Move", 
+        "Se Mova", 
+        SkillDependency::Speed, 
+        2, 
+        0,1, 
+        0, 
+        false,
+        false,
+        CostType::MovePoints,
+        CasterAnimation::None,
+        testProjectile,
+        {{
+            EffectTarget::Caster,
+            Shape::Tile,
+            EffectType::Pathfind,
+            SkillDependency::Speed,
+            SkillDependency::Speed,
+            1,
+            1,
+            {}
+        }} 
+    };
+}
 

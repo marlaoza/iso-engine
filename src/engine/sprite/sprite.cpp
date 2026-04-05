@@ -1,4 +1,5 @@
 #include "sprite.h"
+#include "render/render.h"
 
 //UI SPRITES
 Sprite container = {
@@ -95,4 +96,27 @@ Sprite dialogAdvanceButtonHL = {
     {{24, 54},23,23},
 
 };
+
+
+SpriteSheet* projectileSheet;
+
+Animation* projectileAnimation;
+
+void loadSpritePrefabs() {
+    projectileSheet = new SpriteSheet{
+        0,
+        "src/assets/sprites/test_projectile.png",
+    };
+    projectileSheet->id = loadUnitSheet(projectileSheet->path);
+    
+    projectileAnimation = new Animation{
+    projectileSheet,
+    8,
+    22,
+    22,
+    1
+}; 
+
+}
+
 

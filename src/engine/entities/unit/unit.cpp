@@ -7,6 +7,8 @@
 
 #include "managers/frameManager/frameManager.h"
 
+#include "entities/projectile/projectile.h"
+
 #include "highlight/highlight.h"
 #include "map/map.h"
 
@@ -31,8 +33,7 @@ bool dirtyUnits = false;
 
     this->baseAnimSpeed = 2;
 
-    this->skills.push_back(new Skill(CreateMoveSkill()));
-    this->skills.push_back(new Skill(CreateSampleSkill()));
+    this->skills.push_back(moveSkill);
 
     units.insert(this);
     unitMap[gridPos.y*BOARD_WIDTH + gridPos.x] = this;
@@ -202,12 +203,16 @@ void Unit::calculatePreview(SDL_Point selectedTile){
     
 }
 
-void Unit::castSkill(int skillId){
+void Unit::castSkill(int skillId, SDL_Point selectedTile){
     if(this->state == EntityState::Casting){
         if(selectedSkill < 0 || selectedSkill > (skills.size()-1)) return;
         Skill* s = this->skills[selectedSkill];
 
-        printf("%d | usou a skill %s",this->id, s->name);
+        printf("%d | usou a skill %s",this->id, s->name.c_str());
+
+        if(s->projectileData != nullptr){
+            new Projectile(*s->projectileData, this->gridPos, {0, 0}, selectedTile, {0,0});
+        }
 
         for (SkillEffect& e : s->effects)
         {

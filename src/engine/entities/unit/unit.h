@@ -43,7 +43,7 @@ class Unit : public Entity{
         void offHoverSkill();
         void selectSkill(int skillId);
 
-        void castSkill(int skillId);
+        void castSkill(int skillId, SDL_Point selectedTile);
 
         void calculatePreview(SDL_Point target);
 

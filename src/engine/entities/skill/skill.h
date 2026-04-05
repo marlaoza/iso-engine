@@ -1,8 +1,10 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include "geometry/geometry.h"
+#include "entities/projectile/projectile.h"
 
 enum class EffectTarget {
     Caster,
@@ -54,11 +56,26 @@ enum class SkillOrigin {
     Tile
 };
 
+
+//se skill meele, meele preparation
+//se skill weapon shoot, aiming
+//se skill weapon meele, weapon preparation
+//se skill power *, power aim
+enum class CasterAnimation {
+    None,
+    Meele,
+    WeaponMeele,
+    WeaponShoot,
+    Power,
+    PowerShoot,
+    PowerSummon,
+};
+
 struct Skill {
     int id;
     SkillOrigin origin;
-    char name[32];
-    char description[256];
+    std::string name;
+    std::string description;
     SkillDependency rangeDep;
     int highlightPallete;
     int minRange; int baseRange;
@@ -66,12 +83,13 @@ struct Skill {
     bool reusable;
     bool used;
     CostType costType;
+    CasterAnimation casterAnimation;
+    ProjectileData* projectileData;
     std::vector<SkillEffect> effects;
 };
 
+extern Skill* moveSkill;
 
-Skill CreateMoveSkill();
-Skill CreateSampleSkill();
-Skill CreateSampleSkill2();
+void loadSkillPrefabs();
 
 std::vector<SDL_Point> getSkillEffectArea(SkillEffect e, SDL_Point origin, Direction direction, int range);

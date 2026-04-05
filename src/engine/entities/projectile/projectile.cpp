@@ -204,3 +204,17 @@ void sortProjectiles(SDL_GPUDevice* renderer){
     dirtyProjectiles = false;
 
 }
+
+
+
+ProjectileData* testProjectile;
+
+void loadProjectilePrefabs(){
+    testProjectile = new ProjectileData{
+        11,
+        22,
+        90.0,
+        ProjectileTrajectory::Arc,
+        projectileAnimation,
+    };
+}

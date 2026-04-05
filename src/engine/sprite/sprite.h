@@ -62,3 +62,11 @@ extern Sprite dialogOptionButtonHL;
 extern Sprite dialogAdvanceButton;
 
 extern Sprite dialogAdvanceButtonHL;
+
+
+
+extern SpriteSheet* projectileSheet;
+
+extern Animation* projectileAnimation;
+
+void loadSpritePrefabs();
