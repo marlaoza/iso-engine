@@ -5,5 +5,13 @@ ENGINE = src/engine/map/map.cpp src/engine/geometry/geometry.cpp src/engine/rend
 
 INCLUDES = -I src -I src/engine -I src/include/ -I src/include/sdl3
 
-all:
+SHADERS = entity highlight particle tile ui
+
+all: shaders
 	g++ $(INCLUDES) -L src/lib -o main main.cpp $(MANAGERS) $(ENTITIES) $(EFFECTS) $(ENGINE) -lmingw32 -lSDL3 -lSDL3_ttf -static-libgcc -static-libstdc++
+
+shaders:
+	@for dir in $(SHADERS); do \
+		glslangValidator -D -V -e main -o src/assets/shaders/$$dir/vertShader src/assets/shaders/$$dir/shader.vert; \
+		glslangValidator -D -V -e main -o src/assets/shaders/$$dir/fragShader src/assets/shaders/$$dir/shader.frag; \
+	done
