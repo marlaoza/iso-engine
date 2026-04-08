@@ -21,8 +21,8 @@ class Entity{
         int id;
         SDL_FPoint gridOffset;
         SDL_Point gridPos;
-        float height;
-        float width;
+        float quadHeight;
+        float quadWidth;
 
         int baseAnimSpeed;
         

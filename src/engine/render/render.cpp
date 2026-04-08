@@ -688,7 +688,7 @@ SDL_GPUSampler* particleSampler;
 void createParticlePipeline(SDL_GPUDevice* renderer, SDL_Window* window){
 
     SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
-    SDL_GPUVertexAttribute attributes[8];
+    SDL_GPUVertexAttribute attributes[11];
 
     //VERTEX
     attributes[0].location = 0;
@@ -729,8 +729,23 @@ void createParticlePipeline(SDL_GPUDevice* renderer, SDL_Window* window){
 
     attributes[7].location = 7;
     attributes[7].buffer_slot = 1;
-    attributes[7].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT;   //SIZE
+    attributes[7].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4;   //START COLOR
     attributes[7].offset = (sizeof(float)*6) + (sizeof(int)*2);
+
+    attributes[8].location = 8;
+    attributes[8].buffer_slot = 1;
+    attributes[8].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4;   //END COLOR
+    attributes[8].offset = (sizeof(float)*10) + (sizeof(int)*2);
+
+    attributes[9].location = 9;
+    attributes[9].buffer_slot = 1;
+    attributes[9].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT;   //START SIZE
+    attributes[9].offset = (sizeof(float)*14) + (sizeof(int)*2);
+
+    attributes[10].location = 10;
+    attributes[10].buffer_slot = 1;
+    attributes[10].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT;   //END SIZE
+    attributes[10].offset = (sizeof(float)*15) + (sizeof(int)*2);
     
     pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/particle/vertShader", SDL_GPU_SHADERSTAGE_VERTEX, 0);
     pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/particle/fragShader", SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
@@ -748,7 +763,7 @@ void createParticlePipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     pipelineInfo.vertex_input_state.vertex_buffer_descriptions = binding_desc;
 
     pipelineInfo.vertex_input_state.vertex_attributes = attributes;
-    pipelineInfo.vertex_input_state.num_vertex_attributes = 8;
+    pipelineInfo.vertex_input_state.num_vertex_attributes = 11;
 
     pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 

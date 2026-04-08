@@ -47,7 +47,10 @@ struct Particle_Data {
     float velX, velY;
     float instanceTime;
     float lifeTime;
-    float size;
+    SDL_FColor startColor;
+    SDL_FColor endColor;
+    float startSize;
+    float endSize;
 };
 
 struct UI_Vertex {

@@ -189,7 +189,19 @@ void createUnitUI(){
 
 void toggleUnitUI(SDL_GPUDevice* renderer){
     if(SELECTED_UNIT == nullptr){SelectedUnitUI->setVisible(false);}
-    else{SelectedUnitUI->setVisible(true);}
+    else{
+        SelectedUnitUI->setVisible(true);
+        UIElement* tail = SelectedUnitUI->getChild(1);
+        tail->setSize(SELECTED_UNIT->skills.size() * 47, tail->getHeight());
+
+        for (int i = 1; i <= 6; i++)
+        {
+            UIElement* sButton = SelectedUnitUI->getChild(3+i);
+            if(i > SELECTED_UNIT->skills.size())sButton->setVisible(false);
+            else sButton->setVisible(true);
+        }
+        
+    }
 }
 
 UnitData* test;
@@ -222,6 +234,7 @@ void createPrefabs(){
 
 }
 
+
 int main(int argc, char *argv[]){
     SDL_Window *window = NULL;
     SDL_GPUDevice *renderer = NULL;
@@ -243,6 +256,7 @@ int main(int argc, char *argv[]){
     }
     createPrefabs();
 
+    loadParticlePrefabs();
     loadSpritePrefabs();
     loadProjectilePrefabs();
     loadSkillPrefabs();
@@ -260,11 +274,7 @@ int main(int argc, char *argv[]){
 
         if(SDL_PollEvent(&windowEvent)){
             if(windowEvent.type == SDL_EVENT_QUIT){break;}
-            if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key); if(windowEvent.key.key == SDLK_E) {
-                if(SELECTED_TILE.x >= 0 && SELECTED_TILE.y >= 0){
-                    Particle* p = new Particle(SELECTED_TILE, ParticleType::Line);
-                }
-            }}
+            if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key);}
             if(windowEvent.type == SDL_EVENT_KEY_UP){onKeyUp(windowEvent.key.key);}
             if(windowEvent.type == SDL_EVENT_MOUSE_MOTION){onMouseMotion(windowEvent.motion);}
             if(windowEvent.type == SDL_EVENT_MOUSE_WHEEL){zoomCamera(windowEvent.wheel.y);}
@@ -323,6 +333,8 @@ int main(int argc, char *argv[]){
             for (Projectile* p : projectileDeleteList){delete p;}
             projectileDeleteList.clear();
         }
+
+        for (Particle* p : particles){p->update();}
 
         if(dirtyMap)sortTilePoints(renderer);
         if(dirtyHighlights)sortHighlight(renderer);

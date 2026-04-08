@@ -20,8 +20,8 @@ bool dirtyUnits = false;
     this->name = name;
     this->gridOffset = {0, 0};
     this->gridPos = gridPos;
-    this->height = uData.baseHeight;
-    this->width = uData.baseWidth;
+    this->quadHeight = uData.baseHeight;
+    this->quadWidth = uData.baseWidth;
     this->maxHp = uData.baseHP;
     this->currentHp = this->maxHp;
     this->maxSpeed = uData.baseSpeed;
@@ -326,13 +326,14 @@ void sortUnits(SDL_GPUDevice* renderer){
     { 
         SDL_FPoint tileOrigin = tiles[u->gridPos.y*BOARD_WIDTH + u->gridPos.x].tile.surface[0];
         SDL_FPoint tl = {tileOrigin.x + u->gridOffset.x, tileOrigin.y + u->gridOffset.y};
- 
+        
+        const Animation& anim = u->getCurrentAnimation();
         SDL_FPoint ptr = {tl.x, tl.y + (TILE_SIZE/2)};
         SDL_FPoint points_p[4] = {
-            {ptr.x - u->width, ptr.y - u->height},
-            {ptr.x + u->width, ptr.y - u->height},
-            {ptr.x - u->width, ptr.y},
-            {ptr.x + u->width, ptr.y},
+            {ptr.x - u->quadWidth, ptr.y - u->quadHeight},
+            {ptr.x + u->quadWidth, ptr.y - u->quadHeight},
+            {ptr.x - u->quadWidth, ptr.y},
+            {ptr.x + u->quadWidth, ptr.y},
         };
 
         int indexSum = 0;
@@ -345,7 +346,6 @@ void sortUnits(SDL_GPUDevice* renderer){
             else if(u->gridPos.y > u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/1.5f){indexSum = -1;}}
         }
 
-        const Animation& anim = u->getCurrentAnimation();
         SDL_FPoint UVS[4] = {
             {0.0f, 0.0f},{1.0f, 0.0f},
             {0.0f, 1.0f},{1.0f, 1.0f}

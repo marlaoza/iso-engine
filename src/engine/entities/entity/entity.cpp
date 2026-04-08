@@ -32,8 +32,14 @@ void Entity::playClip(std::string clipName){
 int Entity::getClipStartFrame(){return this->clipStartFrame;}
 
 Animation& Entity::getCurrentAnimation(){
-    if(this->currentClip != nullptr){return *this->currentClip;}
-    return *this->animations["idle"];
+    Animation* clip = nullptr;
+    if(this->currentClip != nullptr){clip = this->currentClip;}
+    if(clip == nullptr){
+        clip = this->animations.begin()->second; 
+    }
+    this->quadHeight = clip->frameHeight;
+    this->quadWidth = clip->frameWidth/2.0f;
+    return *clip;
 }
 
 void Entity::setPath(std::vector<SDL_Point> path){

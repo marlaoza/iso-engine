@@ -23,14 +23,16 @@ struct VSInput {
     float2 velocity: TEXCOORD3;
     float instanceTime: TEXCOORD4;
     float lifeTime: TEXCOORD5;
-    float size: TEXCOORD6;
-
+    float4 startColor: TEXCOORD6;
+    float4 endColor: TEXCOORD7;
+    float startSize: TEXCOORD8;
+    float endSize: TEXCOORD9;
 };
 
 struct VSOutput {
     float4 pos: SV_POSITION;
     float2 uv: TEXCOORD0;
-    float opacity : TEXCOORD1;
+    float4 color : COLOR0;
 };
 
 
@@ -41,16 +43,34 @@ VSOutput main(VSInput input) {
 
     float age = frameTime - input.instanceTime;
 
-    float frameCheck = frameTime;
-    if(frameCheck < input.instanceTime){frameCheck += 50.0f;}
-    if(frameCheck - input.instanceTime >= input.lifeTime){
+    float t = saturate(age / input.lifeTime);
+
+    if (age < 0 || age > input.lifeTime) {
         output.pos = float4(0, 0, 0, 0);
         return output;
     }
 
+    float currentSize = lerp(input.startSize, input.endSize, t);
+
+    output.color = lerp(input.startColor, input.endColor, t);
+
     float2 currentOrigin = input.particlePos + (input.velocity * age);
 
-    float2 vertexOffset = input.pos * input.size;
+    float indexXOffset = 0.0;
+    if(currentOrigin.x - input.particlePos.x > 18.0){
+        indexXOffset = (currentOrigin.x - input.particlePos.x) % 18.0;
+    }else if(input.particlePos.x - currentOrigin.x > 18.0){
+        indexXOffset = (currentOrigin.x - input.particlePos.x) % 18.0;
+    }
+
+    float indexYOffset = 0.0;
+    if(currentOrigin.y - input.particlePos.y > 18.0){
+        indexYOffset = (currentOrigin.y - input.particlePos.y) % 18.0;
+    }else if(input.particlePos.y - currentOrigin.y > 18.0){
+        indexYOffset = (currentOrigin.y - input.particlePos.y) % 18.0;
+    }
+
+    float2 vertexOffset = input.pos * currentSize;
 
     float2 normPos = currentOrigin + vertexOffset;
 
@@ -58,7 +78,7 @@ VSOutput main(VSInput input) {
     
     float2 p = (normPos - normCam) * camZoom;
 
-    float index = (float)(input.gridPos.x + input.gridPos.y);
+    float index = ((float)input.gridPos.x + indexXOffset) + ((float)input.gridPos.y + indexYOffset) + 0.05;
     float depth = (index / (float)mapSize) + 0.005;
 
 
@@ -68,7 +88,6 @@ VSOutput main(VSInput input) {
 
 
     output.uv = input.uv;
-    output.opacity = 1.0 - (age / input.lifeTime);
 
     return output;
 }

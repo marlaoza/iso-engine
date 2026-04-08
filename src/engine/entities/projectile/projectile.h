@@ -9,6 +9,8 @@
 
 #include "entities/entity/entity.h"
 
+#include "effects/particle/particle.h"
+
 #include "render/render.h"
 #include "map/map.h"
 
@@ -25,7 +27,10 @@ struct ProjectileData {
     float speed;
     ProjectileTrajectory trajectory;
     Animation* animation;
+    ParticleInfo* trail;
+    ParticleInfo* impact;
 };
+
 
 class Projectile : public Entity {
     public:
@@ -46,6 +51,8 @@ class Projectile : public Entity {
         SDL_FPoint startPos;
         SDL_FPoint startOffset;
         SDL_FPoint endPos;
+        Particle* trail;
+        Particle* impact;
         float trajectoryDistance;
 };
 
