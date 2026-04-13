@@ -15,17 +15,22 @@ cbuffer SceneData : register(b0) {
 };
 
 struct VSInput {
-    float2 pos : POSITION;
-    float2 uv : TEXCOORD1;
-    int type: TEXCOORD2;
-    int2 gridPos : TEXCOORD3;
+    float2 pos: POSITION;
+    float2 uv: TEXCOORD0;
 
+    float2 tilePos: TEXCOORD1;
+    int2 gridPos: TEXCOORD2;
+    int type: TEXCOORD3;
+    uint edges: TEXCOORD4;
+   
 };
+
 
 struct VSOutput {
     float4 pos : SV_POSITION;
     float2 uv : TEXCOORD0;
     int type: TEXCOORD1;
+    nointerpolation uint edges : TEXCOORD2;
 };
 
 VSOutput main(VSInput input) {
@@ -33,12 +38,13 @@ VSOutput main(VSInput input) {
 
     float2 resolution = float2(windowWidth, windowHeight);
 
-    float2 normPos = input.pos;
+    float2 normPos = input.tilePos + input.pos;
+
     float2 normCam = float2(camX, camY);
     
     float2 p = (normPos - normCam) * camZoom;
 
-    float depth = ( (float)(input.gridPos.x + input.gridPos.y) / (float)mapSize ) + 0.002;
+    float depth = ( (float)(input.gridPos.x + input.gridPos.y) / (float)mapSize ) + (0.0002*input.type);
 
     if(input.type == 1){
         depth += 0.001;
@@ -50,6 +56,7 @@ VSOutput main(VSInput input) {
 
     output.uv = input.uv;
     output.type = input.type;
+    output.edges = input.edges;
 
 
     return output;

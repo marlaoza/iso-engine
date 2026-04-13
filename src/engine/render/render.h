@@ -8,6 +8,10 @@ extern SDL_GPUDevice* renderer;
 
 extern std::vector<SDL_GPUTexture*> textDrawCalls;
 
+struct Base_Vertex{
+    SDL_FPoint pos;
+    SDL_FPoint uv;
+};
 
 struct Tile_Vertex {
     SDL_FPoint pos;
@@ -29,17 +33,14 @@ struct Entity_Vertex {
     int indexOffset;
 };
 
-struct Highlight_Vertex {
+struct Highlight_Data {
     SDL_FPoint pos;
-    SDL_FPoint uv;
-    int32_t type;
     int32_t gridX, gridY;
+    int32_t type;
+    uint8_t edges;
 };
 
-struct Particle_Vertex{
-    SDL_FPoint pos;
-    SDL_FPoint uv;
-};
+
 
 struct Particle_Data {
     SDL_FPoint particlePos;
@@ -106,7 +107,9 @@ extern int tileIndexSize;
 
 extern SDL_GPUBuffer* highlightVBuf;
 extern SDL_GPUBuffer* highlightIBuf;
-extern int highLightIndexSize;
+extern SDL_GPUBuffer* highlightFBuf;
+extern int highlightIndexSize;
+extern int highlightDataSize;
 
 extern SDL_GPUBuffer* particleVBuf;
 extern SDL_GPUBuffer* particleIBuf;

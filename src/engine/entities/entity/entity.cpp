@@ -4,7 +4,7 @@
 #include <cmath>
 
 
-Entity::Entity(){
+Entity::Entity(SDL_Point gridPos, int gridWidth, int gridHeight){
     this->currentClip = nullptr;
     this->clipStartFrame = 0;
     
@@ -12,7 +12,13 @@ Entity::Entity(){
     this->targetPool = {};
     this->poolIndex = 0;
 
+    this->gridWidth = gridWidth;
+    this->gridHeight = gridHeight;
+    
+
     this->moveSpeed = 70.0f;
+
+    this->gridPos = gridPos;
 
     this->direction = Direction::Down;
     this->state = EntityState::Idle;
@@ -79,7 +85,7 @@ void Entity::move(){
             this->state = EntityState::Idle;
             this->targetPos = {-1,-1};
             this->poolIndex = 0;
-            for (SDL_Point p : this->targetPool){clearHighlight(p);}
+            clearHighlightRegion(HL_ACTION_LINE);
             this->targetPool.clear();
         }
     }

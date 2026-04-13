@@ -2,7 +2,7 @@
 
 bool dirtyProjectiles = false;
 
-Projectile::Projectile(const ProjectileData& pData, SDL_Point origin, SDL_FPoint originOffset, SDL_Point end, SDL_FPoint endOffset) : Entity(){
+Projectile::Projectile(const ProjectileData& pData, SDL_Point origin, SDL_FPoint originOffset, SDL_Point end, SDL_FPoint endOffset) : Entity(origin){
     this->animations["idle"] = pData.animation;
     this->quadWidth = pData.width;
     this->quadHeight = pData.height;
@@ -13,7 +13,6 @@ Projectile::Projectile(const ProjectileData& pData, SDL_Point origin, SDL_FPoint
 
     this->z = 0.0;
 
-    this->gridPos = origin;
     this->gridOffset = originOffset;
 
     SDL_FPoint startPixel = tiles[origin.y*BOARD_WIDTH + origin.x].tile.surface[0];

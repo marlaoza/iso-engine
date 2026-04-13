@@ -15,11 +15,10 @@
 
 bool dirtyUnits = false;
 
- Unit::Unit(const std::string& name, SDL_Point gridPos, const UnitData& uData) : Entity() {
+ Unit::Unit(const std::string& name, SDL_Point gridPos, const UnitData& uData) : Entity(gridPos) {
     this->id = units.size();
     this->name = name;
     this->gridOffset = {0, 0};
-    this->gridPos = gridPos;
     this->quadHeight = uData.baseHeight;
     this->quadWidth = uData.baseWidth;
     this->maxHp = uData.baseHP;
@@ -36,8 +35,9 @@ bool dirtyUnits = false;
     this->skills.push_back(moveSkill);
     this->skills.push_back(grenadeSkill);
 
-    units.insert(this);
+    
     unitMap[gridPos.y*BOARD_WIDTH + gridPos.x] = this;
+    units.insert(this);
     dirtyUnits = true;
 }
 
@@ -57,14 +57,15 @@ void Unit::desselect(){
     if(this->state == EntityState::Casting || this->state == EntityState::Moving) return;
     if(SELECTED_UNIT == this){
         this->state = EntityState::Idle;
-        for (SDL_Point p : this->reachMap){clearHighlight(p);}
+        clearHighlightRegion(HL_REACH_MAP);
         this->reachMap.clear();
+
+        clearHighlightRegion(HL_EFFECT_AREA);
+        clearHighlightRegion(HL_ACTION_LINE);
         
         for (Skill* s :  this->skills)
         {
             for(SkillEffect& e : s->effects){
-                for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
-                for(SDL_Point p : e.preview.affectedTiles){clearHighlight(p);}
                 e.preview.affectedTiles.clear();
                 e.preview.actionLines.clear();
             }
@@ -82,17 +83,14 @@ void Unit::hoverSkill(int skillId){
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);
 
     this->calculateReachMap(range, skill->minRange);
-    for (SDL_Point p : this->reachMap)
-    {
-        addHighlight(p, 1+skill->highlightPallete, skill->highlightPallete);
-    }
+    addHighlightRegion(this->reachMap, HL_REACH_MAP);
     this->state = EntityState::Selecting;
         
 }
 
 void Unit::offHoverSkill(){
     if(this->state == EntityState::Selecting){
-        for (SDL_Point p : this->reachMap){clearHighlight(p);}
+        clearHighlightRegion(HL_REACH_MAP);
         this->reachMap.clear();
         this->state = EntityState::Idle;
 
@@ -107,10 +105,7 @@ void Unit::selectSkill(int skillId){
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);    
 
     this->calculateReachMap(range, skill->minRange);
-    for (SDL_Point p : this->reachMap)
-    {
-        addHighlight(p, 1+skill->highlightPallete, skill->highlightPallete);
-    }
+    addHighlightRegion(this->reachMap, HL_REACH_MAP);
     this->state = EntityState::Casting;
     this->selectedSkill = skillId;
     
@@ -139,17 +134,17 @@ void Unit::calculatePreview(SDL_Point selectedTile){
 
     Skill* s = this->skills[selectedSkill];
 
+    clearHighlightRegion(HL_EFFECT_AREA);
+    clearHighlightRegion(HL_ACTION_LINE);
     for(SkillEffect& e : s->effects){
-        for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
-        for(SDL_Point p : e.preview.affectedTiles){clearHighlight(p);}
         e.preview.affectedTiles.clear();
         e.preview.actionLines.clear();
     }
 
     bool found = false;
+    addHighlightRegion(this->reachMap, HL_REACH_MAP);
     for (SDL_Point p : this->reachMap){
         if(p.x == selectedTile.x && p.y == selectedTile.y){found = true;}
-        addHighlight(p, 1+s->highlightPallete, s->highlightPallete);
     }
     if(!found){return;}
 
@@ -202,8 +197,8 @@ void Unit::calculatePreview(SDL_Point selectedTile){
         }
 
         e.preview = currentEp;
-        for(SDL_Point p : e.preview.affectedTiles){addHighlight(p, 3+s->highlightPallete, s->highlightPallete);}
-        for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){addHighlight(p, 2+s->highlightPallete, s->highlightPallete);}}
+        addHighlightRegion(e.preview.affectedTiles, HL_EFFECT_AREA);
+        for(std::vector<SDL_Point> pp : e.preview.actionLines){addHighlightRegion(pp, HL_ACTION_LINE);}
     }
 
     
@@ -247,15 +242,10 @@ void Unit::castSkill(int skillId, SDL_Point selectedTile){
 
         bool found = false;
 
-        for (SDL_Point p : this->reachMap){
-            if(p.x == selectedTile.x && p.y == selectedTile.y){found = true;}
-            clearHighlight(p);
-        }
-
-        for (SkillEffect& e : s->effects){
-            for(std::vector<SDL_Point> pp : e.preview.actionLines){for(SDL_Point p : pp){clearHighlight(p);}}
-            for(SDL_Point p : e.preview.affectedTiles){clearHighlight(p);}
-        }
+        clearHighlightRegion(HL_REACH_MAP);
+        for (SDL_Point p : this->reachMap){if(p.x == selectedTile.x && p.y == selectedTile.y){found = true;}}
+        clearHighlightRegion(HL_EFFECT_AREA);
+        clearHighlightRegion(HL_ACTION_LINE);
 
         if(found){
             printf("%d | usou a skill %s",this->id, s->name.c_str());

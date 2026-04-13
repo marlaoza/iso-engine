@@ -266,6 +266,7 @@ int main(int argc, char *argv[]){
     toggleUnitUI(renderer);
     sortTilePoints(renderer);
     loadParticleQuad(renderer);
+    loadHighlightQuad(renderer);
     SDL_Event windowEvent;
 
     
@@ -337,7 +338,7 @@ int main(int argc, char *argv[]){
         for (Particle* p : particles){p->update();}
 
         if(dirtyMap)sortTilePoints(renderer);
-        if(dirtyHighlights)sortHighlight(renderer);
+        if(dirtyHighlights)sortHighlights(renderer);
         if(dirtyUnits)sortUnits(renderer);
         if(dirtyProjectiles)sortProjectiles(renderer);
         if(dirtyParticles)sortParticles(renderer);

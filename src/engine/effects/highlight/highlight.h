@@ -6,12 +6,25 @@
 #include "geometry/geometry.h"
 
 #include "constants.h"
+#include <unordered_set>
 
 
-extern Geometry<Highlight_Vertex> highlightGeometry[BOARD_WIDTH + BOARD_HEIGHT - 1];
-extern int highlightMap[BOARD_WIDTH * BOARD_HEIGHT];
+#define HL_SELECTED_TILE 1
+
+#define HL_REACH_MAP 3
+#define HL_EFFECT_AREA 4
+#define HL_ACTION_LINE 5
+
+extern std::unordered_set<SDL_Point, SDL_PointHash, SDL_PointEquality> highlightRegionMap[MAX_HL_LAYERS];
+
 extern bool dirtyHighlights;
 
-void sortHighlight(SDL_GPUDevice* renderer);
-void addHighlight(SDL_Point p, int type, int pallete);
-void clearHighlight(SDL_Point p);
+void loadHighlightQuad(SDL_GPUDevice* renderer);
+void sortHighlights(SDL_GPUDevice* renderer);
+
+void addHighlightPoint(SDL_Point p, int type, bool updateBuffer = true);
+void clearHighlightPoint(SDL_Point p, int type,bool updateBuffer = true);
+
+void addHighlightRegion(std::vector<SDL_Point> p, int type);
+void clearHighlightRegion(int type);
+

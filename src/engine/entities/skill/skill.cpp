@@ -47,7 +47,6 @@ void loadSkillPrefabs(){
         "Move", 
         "Se Mova", 
         SkillDependency::Speed, 
-        2, 
         0,1, 
         0, 
         false,
@@ -64,7 +63,8 @@ void loadSkillPrefabs(){
             1,
             1,
             {}
-        }} 
+        }},
+        0
     };
 
     grenadeSkill = new Skill
@@ -74,7 +74,6 @@ void loadSkillPrefabs(){
         "Granada", 
         "Explode em área", 
         SkillDependency::None, 
-        2, 
         3,8, 
         0, 
         false,
@@ -91,7 +90,8 @@ void loadSkillPrefabs(){
             3,
             3,
             {}
-        }} 
+        }},
+        0
     };
 }
 

@@ -71,13 +71,13 @@ enum class CasterAnimation {
     PowerSummon,
 };
 
+
 struct Skill {
     int id;
     SkillOrigin origin;
     std::string name;
     std::string description;
     SkillDependency rangeDep;
-    int highlightPallete;
     int minRange; int baseRange;
     int cost;
     bool reusable;
@@ -86,6 +86,7 @@ struct Skill {
     CasterAnimation casterAnimation;
     ProjectileData* projectileData;
     std::vector<SkillEffect> effects;
+    int castingType;
 };
 
 extern Skill* moveSkill;

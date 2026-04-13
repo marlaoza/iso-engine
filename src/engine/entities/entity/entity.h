@@ -24,6 +24,9 @@ class Entity{
         float quadHeight;
         float quadWidth;
 
+        int gridWidth;
+        int gridHeight;
+
         int baseAnimSpeed;
         
         Direction direction;
@@ -42,7 +45,7 @@ class Entity{
         Animation* currentClip;
         int getClipStartFrame();
 
-        Entity();
+        Entity(SDL_Point gridPos, int gridWidth = 1, int gridHeight = 1);
         virtual ~Entity() = default;
 
     protected:

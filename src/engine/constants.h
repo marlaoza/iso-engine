@@ -19,3 +19,5 @@
 #define MAX_UNITS 256
 #define MAX_UI_ELEMENTS 1024
 
+#define MAX_HL_LAYERS 6
+

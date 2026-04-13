@@ -103,7 +103,7 @@ void Particle::update(){
 }
 
 void loadParticleQuad(SDL_GPUDevice* renderer){
-    std::vector<Particle_Vertex> vertices;
+    std::vector<Base_Vertex> vertices;
     std::vector<int> indices;
 
     particleIndexSize = 0;
@@ -123,7 +123,7 @@ void loadParticleQuad(SDL_GPUDevice* renderer){
 
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
 
-    size_t vertSize = vertices.size() * sizeof(Particle_Vertex);
+    size_t vertSize = vertices.size() * sizeof(Base_Vertex);
     size_t indexSize = indices.size() * sizeof(int);
     Uint32 totalSize = (Uint32)(vertSize + indexSize);
 

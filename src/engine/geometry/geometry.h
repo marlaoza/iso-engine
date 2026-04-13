@@ -2,6 +2,19 @@
 #include "SDL_rect.h"
 #include "SDL_pixels.h"
 #include <vector>
+#include <constants.h>
+
+struct SDL_PointHash{
+    size_t operator()(const SDL_Point& a) const {
+        return (size_t)(a.y * BOARD_WIDTH + a.x);
+    }
+};
+
+struct SDL_PointEquality{
+    bool operator()(const SDL_Point& a, const SDL_Point& b) const {
+        return a.x == b.x && a.y == b.y;
+    };
+};
 
 enum class Direction {
     Down,

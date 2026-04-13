@@ -61,7 +61,9 @@ int tileIndexSize = 0;
 
 SDL_GPUBuffer* highlightVBuf;
 SDL_GPUBuffer* highlightIBuf;
-int highLightIndexSize = 0;
+SDL_GPUBuffer* highlightFBuf;
+int highlightIndexSize = 0;
+int highlightDataSize = 0;
 
 SDL_GPUBuffer* particleVBuf;
 SDL_GPUBuffer* particleIBuf;
@@ -248,72 +250,7 @@ void createPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     }
 
 }
-void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
-    SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
 
-    SDL_GPUVertexAttribute attributes[4];
-
-    attributes[0].location = 0;
-    attributes[0].buffer_slot = 0;
-    attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
-    attributes[0].offset = 0;
-
-    attributes[1].location = 1;
-    attributes[1].buffer_slot = 0;
-    attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
-    attributes[1].offset = sizeof(float) * 2;
-
-    attributes[2].location = 2;
-    attributes[2].buffer_slot = 0;
-    attributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
-    attributes[2].offset = (sizeof(float) * 4);
-
-    attributes[3].location = 3;
-    attributes[3].buffer_slot = 0;
-    attributes[3].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2;
-    attributes[3].offset = (sizeof(float) * 4) + sizeof(int);
-
-    pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/highlight/vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
-    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/highlight/fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 0);
-
-    pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
-    pipelineInfo.vertex_input_state.vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[]){{
-        .slot = 0,
-        .pitch = sizeof(Highlight_Vertex),
-        .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
-        .instance_step_rate = 0,
-    }};
-
-    pipelineInfo.vertex_input_state.vertex_attributes = attributes;
-    pipelineInfo.vertex_input_state.num_vertex_attributes = 4;
-
-    pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
-
-    pipelineInfo.target_info.num_color_targets = 1;
-    pipelineInfo.target_info.color_target_descriptions = (SDL_GPUColorTargetDescription[]){{
-        .format = SDL_GetGPUSwapchainTextureFormat(renderer, window),
-        .blend_state = { 
-            .src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA,
-            .dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-            .color_blend_op = SDL_GPU_BLENDOP_ADD,
-            .src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
-            .dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ZERO,
-            .alpha_blend_op = SDL_GPU_BLENDOP_ADD,
-            .enable_blend = true,
-        }
-    }};
-
-    pipelineInfo.depth_stencil_state.enable_depth_test = true;
-    pipelineInfo.depth_stencil_state.enable_depth_write = true;
-    pipelineInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS; 
-
-    pipelineInfo.target_info.has_depth_stencil_target = true;
-    pipelineInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT;
-
-    highLightPipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
-    if (highLightPipeline == NULL) {SDL_Log("Highlight Pipeline creation failed: %s", SDL_GetError());}
-
-}
 
 SDL_GPUTexture* unitTextureArray;
 SDL_GPUSampler* unitSampler;
@@ -683,6 +620,89 @@ void loadUISpriteSheet(SDL_GPUDevice* renderer, const char* path){
     textUiSampler = SDL_CreateGPUSampler(renderer, &textSamplerInfo);
 }
 
+void createHighLightPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
+    SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
+
+    SDL_GPUVertexAttribute attributes[6];
+
+    //VERTEX
+    attributes[0].location = 0;
+    attributes[0].buffer_slot = 0;
+    attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;  //POS
+    attributes[0].offset = 0;
+
+    attributes[1].location = 1;
+    attributes[1].buffer_slot = 0;
+    attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;  //UV
+    attributes[1].offset = (sizeof(float)*2);
+
+    //HIGHLIGHT TILE INFO
+    attributes[2].location = 2;
+    attributes[2].buffer_slot = 1;
+    attributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;   
+    attributes[2].offset = 0;
+
+    attributes[3].location = 3;
+    attributes[3].buffer_slot = 1;
+    attributes[3].format = SDL_GPU_VERTEXELEMENTFORMAT_INT2; 
+    attributes[3].offset = (sizeof(float)*2);
+
+    attributes[4].location = 4;
+    attributes[4].buffer_slot = 1;
+    attributes[4].format = SDL_GPU_VERTEXELEMENTFORMAT_INT;
+    attributes[4].offset = (sizeof(float) * 2)  + (sizeof(int) * 2);
+
+    attributes[5].location = 5;
+    attributes[5].buffer_slot = 1;
+    attributes[5].format = SDL_GPU_VERTEXELEMENTFORMAT_UINT;
+    attributes[5].offset = (sizeof(float) * 2)  + (sizeof(int) * 3);
+
+    pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/highlight/vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
+    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/highlight/fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 0);
+
+    SDL_GPUVertexBufferDescription binding_desc[2];
+    binding_desc[0].slot = 0;
+    binding_desc[0].pitch = sizeof(Base_Vertex); 
+    binding_desc[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+
+    binding_desc[1].slot = 1;
+    binding_desc[1].pitch = sizeof(Highlight_Data);
+    binding_desc[1].input_rate = SDL_GPU_VERTEXINPUTRATE_INSTANCE;
+
+    pipelineInfo.vertex_input_state.num_vertex_buffers = 2;
+    pipelineInfo.vertex_input_state.vertex_buffer_descriptions = binding_desc;
+
+    pipelineInfo.vertex_input_state.vertex_attributes = attributes;
+    pipelineInfo.vertex_input_state.num_vertex_attributes = 6;
+
+    pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+
+    pipelineInfo.target_info.num_color_targets = 1;
+    pipelineInfo.target_info.color_target_descriptions = (SDL_GPUColorTargetDescription[]){{
+        .format = SDL_GetGPUSwapchainTextureFormat(renderer, window),
+        .blend_state = { 
+            .src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA,
+            .dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+            .color_blend_op = SDL_GPU_BLENDOP_ADD,
+            .src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
+            .dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ZERO,
+            .alpha_blend_op = SDL_GPU_BLENDOP_ADD,
+            .enable_blend = true,
+        }
+    }};
+
+    pipelineInfo.depth_stencil_state.enable_depth_test = true;
+    pipelineInfo.depth_stencil_state.enable_depth_write = true;
+    pipelineInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS; 
+
+    pipelineInfo.target_info.has_depth_stencil_target = true;
+    pipelineInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT;
+
+    highLightPipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
+    if (highLightPipeline == NULL) {SDL_Log("Highlight Pipeline creation failed: %s", SDL_GetError());}
+
+}
+
 SDL_GPUTexture* particleTextureArray;
 SDL_GPUSampler* particleSampler;
 void createParticlePipeline(SDL_GPUDevice* renderer, SDL_Window* window){
@@ -752,7 +772,7 @@ void createParticlePipeline(SDL_GPUDevice* renderer, SDL_Window* window){
 
     SDL_GPUVertexBufferDescription binding_desc[2];
     binding_desc[0].slot = 0;
-    binding_desc[0].pitch = sizeof(Particle_Vertex); 
+    binding_desc[0].pitch = sizeof(Base_Vertex); 
     binding_desc[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
 
     binding_desc[1].slot = 1;
@@ -772,7 +792,7 @@ void createParticlePipeline(SDL_GPUDevice* renderer, SDL_Window* window){
         .format = SDL_GetGPUSwapchainTextureFormat(renderer, window),
         .blend_state = { 
             .src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA,
-            .dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
+            .dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
             .color_blend_op = SDL_GPU_BLENDOP_ADD,
             .src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
             .dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ZERO,
@@ -846,7 +866,10 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
         SDL_GPUBufferBinding projectileVBinding = { .buffer = projectileVBuf, .offset = 0 };
         SDL_GPUBufferBinding projectileIBinding = { .buffer = projectileIBuf, .offset = 0 };
 
-        SDL_GPUBufferBinding highlightVBinding = { .buffer = highlightVBuf, .offset = 0 };
+         SDL_GPUBufferBinding highlightBindings[2] = { 
+            { highlightVBuf, 0 }, 
+            { highlightFBuf, 0 } 
+        };
         SDL_GPUBufferBinding highlightIBinding = { .buffer = highlightIBuf, .offset = 0 };
 
         SDL_GPUBufferBinding particleBindings[2] = { 
@@ -868,9 +891,9 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
         SDL_DrawGPUIndexedPrimitives(renderPass, tileIndexSize, 1, 0, 0, 0);
 
         SDL_BindGPUGraphicsPipeline(renderPass, highLightPipeline); 
-        SDL_BindGPUVertexBuffers(renderPass, 0, &highlightVBinding, 1);
+        SDL_BindGPUVertexBuffers(renderPass, 0, highlightBindings, 2);
         SDL_BindGPUIndexBuffer(renderPass, &highlightIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-        SDL_DrawGPUIndexedPrimitives(renderPass, highLightIndexSize, 1, 0, 0, 0);
+        SDL_DrawGPUIndexedPrimitives(renderPass, highlightIndexSize, highlightDataSize, 0, 0, 0);
 
         SDL_BindGPUGraphicsPipeline(renderPass, entityPipeline); 
         SDL_GPUTextureSamplerBinding unitBinding = { .texture = unitTextureArray, .sampler = unitSampler };
@@ -961,14 +984,17 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     tileVBuf = SDL_CreateGPUBuffer(renderer, &vInfo);
     tileIBuf = SDL_CreateGPUBuffer(renderer, &iInfo);
 
-    size_t highlightVertSize = BOARD_HEIGHT*BOARD_WIDTH * 4 * sizeof(Highlight_Vertex);
-    size_t highlightIndexSize = BOARD_HEIGHT*BOARD_WIDTH * 6 * sizeof(int);
+    size_t highlightVertSize = 4 * sizeof(Base_Vertex);
+    size_t highlightIndexSize = 6 * sizeof(int);
+    size_t highlightFragmentSize = MAX_HL_LAYERS * BOARD_HEIGHT*BOARD_WIDTH * sizeof(Particle_Data);
     SDL_GPUBufferCreateInfo highlightVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)highlightVertSize };
     SDL_GPUBufferCreateInfo highlightIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)highlightIndexSize };
+    SDL_GPUBufferCreateInfo highlightFInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)highlightFragmentSize };
     highlightVBuf = SDL_CreateGPUBuffer(renderer, &highlightVInfo);
     highlightIBuf = SDL_CreateGPUBuffer(renderer, &highlightIInfo);
+    highlightFBuf = SDL_CreateGPUBuffer(renderer, &highlightFInfo);
 
-    size_t particleVertSize = 4 * sizeof(Particle_Vertex);
+    size_t particleVertSize = 4 * sizeof(Base_Vertex);
     size_t particleIndexSize = 6 * sizeof(int);
     size_t particleFragmentSize = BOARD_HEIGHT*BOARD_WIDTH * 200 * sizeof(Particle_Data);
     SDL_GPUBufferCreateInfo particleVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)particleVertSize };
@@ -1020,8 +1046,10 @@ void destroyRenderer(SDL_GPUDevice* renderer){
     SDL_ReleaseGPUBuffer(renderer, projectileIBuf);
     SDL_ReleaseGPUBuffer(renderer,highlightVBuf);
     SDL_ReleaseGPUBuffer(renderer,highlightIBuf);
+    SDL_ReleaseGPUBuffer(renderer,highlightFBuf);
     SDL_ReleaseGPUBuffer(renderer,particleVBuf);
     SDL_ReleaseGPUBuffer(renderer,particleIBuf);
+    SDL_ReleaseGPUBuffer(renderer,particleFBuf);
     SDL_ReleaseGPUBuffer(renderer,textVBuf);
     SDL_ReleaseGPUBuffer(renderer,textIBuf);
     
