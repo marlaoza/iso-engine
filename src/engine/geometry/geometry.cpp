@@ -6,12 +6,108 @@
 #include "managers/frameManager/frameManager.h"
 #include <unordered_map>
 #include <cstdio>
+#include "entities/unit/unit.h"
 
-class Unit;
 extern Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
+bool checkSizeValidity(std::vector<SDL_Point> shape, SDL_Point n, bool checkWalkability, int originId, Entity* targetEntity ){
+    for(SDL_Point sp : shape){
+        SDL_Point sizeNeighbor = {n.x + sp.x, n.y + sp.y};
+        int sizeNeighborId = sizeNeighbor.y * BOARD_WIDTH + sizeNeighbor.x;
+        if (sizeNeighbor.x < 0 || sizeNeighbor.x >= BOARD_WIDTH || sizeNeighbor.y < 0 ||  sizeNeighbor.y >= BOARD_HEIGHT) {return false;}
+        if (checkWalkability && tiles[sizeNeighborId].height - tiles[originId].height > 1) { return false;}
+        if (checkWalkability && targetEntity && (unitMap[sizeNeighborId] != targetEntity && unitMap[sizeNeighborId] != nullptr)) { return false;}
+    }
+    return true;
+}
 
-std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize, bool checkWalkability){
+
+std::vector<SDL_Point> _getPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize, Entity* targetEntity, bool checkWalkability){
+    std::vector<SDL_Point> path;
+
+    int gridSize = 0;
+    std::vector<SDL_Point> shape = {{0, 0}};
+
+    if(targetEntity){
+        gridSize = targetEntity->gridSize;
+        shape = targetEntity->shape;
+    }
+    
+    maxSize+=(gridSize-1);
+
+    SDL_Point pathArr[maxSize+1];
+    for (int i = 0; i < maxSize+1; i++)
+    {
+        pathArr[i] = {-1, -1};
+    }
+    pathArr[0] = origin;
+
+    std::unordered_map<int, bool> checked;
+    
+    SDL_Point prevPoint = {-1, -1};
+
+    int oId = origin.y * BOARD_WIDTH + origin.x;
+
+    int lastStep = 0;
+    while(lastStep < maxSize){
+        SDL_Point cur = pathArr[lastStep];
+        int cId = cur.y * BOARD_WIDTH + cur.x;
+        if(cur.x == target.x && cur.y == target.y) break;
+        int curDist = 999;
+        int curId = cur.y * BOARD_WIDTH + cur.x;
+        SDL_Point smallest = cur;
+
+        SDL_Point neighbors[4] = {
+            {cur.x + 1, cur.y}, {cur.x - 1, cur.y},
+            {cur.x, cur.y + 1}, {cur.x, cur.y - 1}
+        };
+
+        for(SDL_Point n : neighbors){
+            
+            if(!checkSizeValidity(shape, n, checkWalkability, cId, targetEntity)){continue;}
+
+            int nId = n.y * BOARD_WIDTH + n.x;
+            if(checked[nId]) continue;
+            int dx = target.x - n.x;
+            int dy = target.y - n.y;
+            int nDist = abs(dx) + abs(dy);
+            if(nDist < curDist){
+                smallest = n;
+                curDist = nDist;
+            }     
+        }
+        if(curDist != 999){
+            int nId = smallest.y * BOARD_WIDTH + smallest.x;
+            checked[nId] = true;
+            lastStep+=1;
+            pathArr[lastStep] = smallest;
+        }
+        else{
+            if(lastStep > 0){
+                lastStep -=1;
+                cur = pathArr[lastStep];
+            }else{
+                break;
+            }
+            
+        }
+    }
+
+    for (int i = 0; i <= lastStep; i++)
+    {
+        if((pathArr[i].x == -1 || pathArr[i].y == -1))
+        break;
+
+        path.push_back(pathArr[i]);
+
+        if((pathArr[i].x == target.x && pathArr[i].y == target.y))
+        break;
+    }
+
+    return path;
+} 
+
+std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, Unit* targetUnit, int minSize, bool checkWalkability){
     std::vector<SDL_Point> path;
 
     SDL_Point pathArr[maxSize+1];
@@ -103,7 +199,14 @@ std::vector<SDL_Point> getStraightPath(SDL_Point origin, SDL_Point target, int m
 
     return path;
 }
-std::vector<SDL_Point> getDiamond(SDL_Point origin, int maxSize, int minSize, bool checkWalkability){
+std::vector<SDL_Point> getDiamond(SDL_Point origin, int maxSize, int minSize, Entity* targetEntity, bool checkWalkability){
+    int gridSize = 0;
+    std::vector<SDL_Point> shape = {{0, 0}};
+
+    if(targetEntity){
+        gridSize = targetEntity->gridSize;
+        shape = targetEntity->shape;
+    }
     std::vector<SDL_Point> reachMap;
     reachMap.push_back(origin);
     int uId = origin.y*BOARD_WIDTH + origin.x;
@@ -125,18 +228,24 @@ std::vector<SDL_Point> getDiamond(SDL_Point origin, int maxSize, int minSize, bo
             {cur.x, cur.y + 1}, {cur.x, cur.y - 1}
         };
         for(SDL_Point n : neighbors){
-            if (n.x < 0 || n.x >= BOARD_WIDTH || n.y < 0 || n.y >= BOARD_HEIGHT) continue;
+            if(!checkSizeValidity(shape, n, checkWalkability, cId, targetEntity)){continue;}
             int nId = n.y * BOARD_WIDTH + n.x;
             if (visited[nId] != 999) continue;
-            if (tiles[nId].height - cheight > 1) continue;
-            if(checkWalkability && unitMap[nId] != nullptr) continue;
             visited[nId] = cDist + 1;
             pointQueue.push(n);
         }
     }
     return reachMap;
 }
-std::vector<SDL_Point> getLine(SDL_Point origin, Direction direction, int maxSize, int minSize, bool checkWalkability){
+std::vector<SDL_Point> getLine(SDL_Point origin, Direction direction, int maxSize, int minSize, Entity* targetEntity, bool checkWalkability){
+    int gridSize = 0;
+    std::vector<SDL_Point> shape = {{0, 0}};
+
+    if(targetEntity){
+        gridSize = targetEntity->gridSize;
+        shape = targetEntity->shape;
+    }
+
     SDL_Point vector = getDirectionVector(direction);
     std::vector<SDL_Point> path;
     
@@ -144,14 +253,10 @@ std::vector<SDL_Point> getLine(SDL_Point origin, Direction direction, int maxSiz
     for (int i = minSize; i < maxSize; i++)
     {
         int oId = o.y * BOARD_WIDTH + o.x;
-        int oHeight = tiles[oId].height;
-
         SDL_Point p = {o.x + vector.x, o.y + vector.y};
         o = p;
-        if (p.x < 0 || p.x >= BOARD_WIDTH || p.y < 0 || p.y >= BOARD_HEIGHT) continue;
+        if(!checkSizeValidity(shape, p, checkWalkability, oId, targetEntity)){continue;}
         int pId = p.y * BOARD_WIDTH + p.x;
-        if (tiles[pId].height - oHeight > 1) continue;
-        if(checkWalkability && unitMap[pId] != nullptr) break;
         path.push_back(p);
         
     }

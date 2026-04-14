@@ -24,8 +24,7 @@ class Entity{
         float quadHeight;
         float quadWidth;
 
-        int gridWidth;
-        int gridHeight;
+        int gridSize;
 
         int baseAnimSpeed;
         
@@ -44,8 +43,9 @@ class Entity{
         void playClip(std::string clipName);
         Animation* currentClip;
         int getClipStartFrame();
+        std::vector<SDL_Point> shape;
 
-        Entity(SDL_Point gridPos, int gridWidth = 1, int gridHeight = 1);
+        Entity(SDL_Point gridPos, int gridSize = 1);
         virtual ~Entity() = default;
 
     protected:

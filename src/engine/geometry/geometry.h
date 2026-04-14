@@ -3,6 +3,8 @@
 #include "SDL_pixels.h"
 #include <vector>
 #include <constants.h>
+class Entity;
+class Unit;
 
 struct SDL_PointHash{
     size_t operator()(const SDL_Point& a) const {
@@ -42,11 +44,11 @@ struct IsoObject {
     SDL_FPoint surface[4];
     SDL_FPoint wall[6];
 };
-
-std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize = 0, bool checkWalkability = true);
+std::vector<SDL_Point> _getPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize = 0, Entity* targetEntity = nullptr, bool checkWalkability = true);
+std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, Unit* targetUnit = nullptr, int minSize = 0, bool checkWalkability = true);
 std::vector<SDL_Point> getStraightPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize = 0, bool checkWalkability = true);
-std::vector<SDL_Point> getDiamond(SDL_Point origin, int maxSize, int minSize = 0, bool checkWalkability = false);
-std::vector<SDL_Point> getLine(SDL_Point origin, Direction direction, int maxSize, int minSize = 0, bool checkWalkability = false);
+std::vector<SDL_Point> getDiamond(SDL_Point origin, int maxSize, int minSize = 0, Entity* targetEntity = nullptr, bool checkWalkability = false);
+std::vector<SDL_Point> getLine(SDL_Point origin, Direction direction, int maxSize, int minSize = 0, Entity* targetEntity = nullptr, bool checkWalkability = false);
 std::vector<SDL_Point> getCross(SDL_Point origin, int maxSize, int minSize = 0, bool checkWalkability = false);
 std::vector<SDL_Point> getX(SDL_Point origin, int maxSize, int minSize = 0, bool checkWalkability = false);
 std::vector<SDL_Point> getDiagonalLine(SDL_Point origin, Direction direction, int maxSize, int minSize = 0, bool checkWalkability = false);

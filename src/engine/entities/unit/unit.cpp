@@ -14,8 +14,9 @@
 
 
 bool dirtyUnits = false;
+Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
- Unit::Unit(const std::string& name, SDL_Point gridPos, const UnitData& uData) : Entity(gridPos) {
+ Unit::Unit(const std::string& name, SDL_Point gridPos, const UnitData& uData) : Entity(gridPos, 3) {
     this->id = units.size();
     this->name = name;
     this->gridOffset = {0, 0};
@@ -35,10 +36,40 @@ bool dirtyUnits = false;
     this->skills.push_back(moveSkill);
     this->skills.push_back(grenadeSkill);
 
+    std::vector<SDL_Point> addedPoints;
+
+    bool canSpawn = true;
+
+    for (SDL_Point p : this->shape)
+    {
+        SDL_Point gridPoint = {this->gridPos.x + p.x, this->gridPos.y + p.y};
+        if(
+               (gridPoint.x >= BOARD_WIDTH)  || (gridPoint.x < 0)
+            || (gridPoint.y >= BOARD_HEIGHT) || (gridPoint.y < 0)
+            || (tiles[gridPoint.y*BOARD_WIDTH + gridPoint.x].height != tiles[gridPos.y*BOARD_WIDTH + gridPos.x].height)
+            || (unitMap[gridPoint.y*BOARD_WIDTH + gridPoint.x] != nullptr)
+        ){
+            canSpawn = false;
+            break;
+        }else{
+            unitMap[gridPoint.y*BOARD_WIDTH + gridPoint.x] = this;
+            addedPoints.push_back(gridPoint);
+            addHighlightPoint(gridPoint, 2);
+        }
+    }
+
+    if(!canSpawn){
+        for(SDL_Point p : addedPoints){
+            unitMap[p.y*BOARD_WIDTH + p.x] = nullptr;
+            clearHighlightPoint(p, 2);
+        }
+        //delete this;
+        return;
+    }else{
+        units.insert(this);
+        dirtyUnits = true;
+    }
     
-    unitMap[gridPos.y*BOARD_WIDTH + gridPos.x] = this;
-    units.insert(this);
-    dirtyUnits = true;
 }
 
 Unit::~Unit() {
@@ -82,7 +113,7 @@ void Unit::hoverSkill(int skillId){
     
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);
 
-    this->calculateReachMap(range, skill->minRange);
+    this->calculateReachMap(skillId, range, skill->minRange);
     addHighlightRegion(this->reachMap, HL_REACH_MAP);
     this->state = EntityState::Selecting;
         
@@ -104,7 +135,7 @@ void Unit::selectSkill(int skillId){
 
     int range = this->getSkillDependentValue(skill->rangeDep, skill->baseRange);    
 
-    this->calculateReachMap(range, skill->minRange);
+    this->calculateReachMap(skillId, range, skill->minRange);
     addHighlightRegion(this->reachMap, HL_REACH_MAP);
     this->state = EntityState::Casting;
     this->selectedSkill = skillId;
@@ -166,6 +197,7 @@ void Unit::calculatePreview(SDL_Point selectedTile){
         {   
             Unit* pTarget = unitMap[p.y * BOARD_WIDTH + p.x];
             if(e.target == EffectTarget::Unit && pTarget == nullptr){continue;}
+            if(e.target == EffectTarget::Caster){pTarget = this;}
             int range2 = this->getSkillDependentValue(e.powerDep, e.basePower);
             std::vector<SDL_Point> actionLine;
 
@@ -177,13 +209,13 @@ void Unit::calculatePreview(SDL_Point selectedTile){
                 case EffectType::Pathfind:
                     if(e.target == EffectTarget::Unit){end = this->gridPos;}
                     else if(e.target == EffectTarget::Caster){start = this->gridPos;}
-                    actionLine = getPath(start, end, range2);
+                    actionLine = _getPath(start, end, range2, 0, pTarget);
                 break;
 
                 case EffectType::Knockback:
                 {
                     Direction pushDir = getDirection(p, origin);
-                    actionLine = getLine(p, pushDir, range2, 0, true);
+                    actionLine = getLine(p, pushDir, range2, 0, pTarget, true);
                 }
                 break;
                 
@@ -191,14 +223,21 @@ void Unit::calculatePreview(SDL_Point selectedTile){
                     continue;
                 break;
             }
-
+            
             currentEp.actionLines.push_back(actionLine);
-
+            for (SDL_Point vp: actionLine)
+            {
+                for (SDL_Point p : pTarget->shape)
+                {
+                    addHighlightPoint({vp.x + p.x, vp.y + p.y}, HL_ACTION_LINE);
+                }
+                
+            }
+            
         }
 
         e.preview = currentEp;
         addHighlightRegion(e.preview.affectedTiles, HL_EFFECT_AREA);
-        for(std::vector<SDL_Point> pp : e.preview.actionLines){addHighlightRegion(pp, HL_ACTION_LINE);}
     }
 
     
@@ -274,15 +313,15 @@ void Unit::move() {
     dirtyUnits = true;
 }
 
-void Unit::calculateReachMap(int size, int minSize){
+void Unit::calculateReachMap(int skillId, int size, int minSize){
     this->reachMap.clear();
-    this->reachMap = getDiamond(this->gridPos, size, minSize);
+    this->reachMap = getDiamond(this->gridPos, size, minSize, this, skillId == 0);
 };
 
 void Unit::setTile(SDL_Point target){
     Entity::setTile(target);
-    unitMap[this->lastPos.y*BOARD_WIDTH + this->lastPos.x] = nullptr;
-    unitMap[target.y*BOARD_WIDTH + target.x] = this;
+    for(SDL_Point p : this->shape){SDL_Point lP = {this->lastPos.x + p.x, this->lastPos.y + p.y};unitMap[lP.y*BOARD_WIDTH + lP.x] = nullptr;}
+    for(SDL_Point p : this->shape){SDL_Point nP = {target.x + p.x, target.y + p.y}; unitMap[nP.y*BOARD_WIDTH + nP.x] = this;}
 };
 
 
@@ -290,7 +329,6 @@ Unit* SELECTED_UNIT;
 Unit* HOVERED_UNIT;
 
 std::unordered_set<Unit*> units;
-Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
 void sortUnits(SDL_GPUDevice* renderer){
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
@@ -311,14 +349,23 @@ void sortUnits(SDL_GPUDevice* renderer){
     std::vector<int> indices;
     
     unitIndexSize = 0;
+    
+    clearHighlightRegion(2);
 
     for (Unit* u : units)
     { 
+        for (SDL_Point p : u->shape) {SDL_Point gridPoint = {u->gridPos.x + p.x, u->gridPos.y + p.y};addHighlightPoint(gridPoint, 2);}
+            
         SDL_FPoint tileOrigin = tiles[u->gridPos.y*BOARD_WIDTH + u->gridPos.x].tile.surface[0];
         SDL_FPoint tl = {tileOrigin.x + u->gridOffset.x, tileOrigin.y + u->gridOffset.y};
         
         const Animation& anim = u->getCurrentAnimation();
         SDL_FPoint ptr = {tl.x, tl.y + (TILE_SIZE/2)};
+
+        if(u->gridSize % 2 == 0){
+            ptr = {ptr.x - (TILE_SIZE/6), ptr.y - (TILE_SIZE/2)};
+        }
+        
         SDL_FPoint points_p[4] = {
             {ptr.x - u->quadWidth, ptr.y - u->quadHeight},
             {ptr.x + u->quadWidth, ptr.y - u->quadHeight},

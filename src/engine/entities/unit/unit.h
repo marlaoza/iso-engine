@@ -51,7 +51,7 @@ class Unit : public Entity{
     private:
         SpriteSheet* expressionSheet;
 
-        void calculateReachMap(int size, int minSize = 0);
+        void calculateReachMap(int skillId, int size, int minSize = 0);
         int getSkillDependentValue(SkillDependency dep, int base);
 
         void setTile(SDL_Point target) override;

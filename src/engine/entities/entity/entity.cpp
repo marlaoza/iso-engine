@@ -4,7 +4,7 @@
 #include <cmath>
 
 
-Entity::Entity(SDL_Point gridPos, int gridWidth, int gridHeight){
+Entity::Entity(SDL_Point gridPos, int gridSize){
     this->currentClip = nullptr;
     this->clipStartFrame = 0;
     
@@ -12,13 +12,27 @@ Entity::Entity(SDL_Point gridPos, int gridWidth, int gridHeight){
     this->targetPool = {};
     this->poolIndex = 0;
 
-    this->gridWidth = gridWidth;
-    this->gridHeight = gridHeight;
+    this->gridSize = gridSize;
     
+    int sizeOffset = (int)std::floor((this->gridSize/2) - 0.5);
+    this->gridPos = {gridPos.x - sizeOffset, gridPos.y - sizeOffset};
+
+    for(int s = 1; s < (int)std::floor(this->gridSize/2)+1; s++ ){
+        int nc = 0;
+        SDL_Point ns[9] = {
+            {-1,-1},{ 0,-1},{ 1,-1},
+            {-1, 0},{ 0, 0},{ 1, 0},
+            {-1, 1},{ 0, 1},{ 1, 1}
+        };
+        for(SDL_Point n : ns){
+            int multiply = s;
+            if(this->gridSize % 2 == 0 && (nc != 1 && nc != 2 && nc != 4)){multiply -= 1;}
+            this->shape.push_back({n.x*multiply, n.y*multiply});
+            nc+=1;
+        }
+    }
 
     this->moveSpeed = 70.0f;
-
-    this->gridPos = gridPos;
 
     this->direction = Direction::Down;
     this->state = EntityState::Idle;
