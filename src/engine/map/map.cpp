@@ -12,19 +12,6 @@ bool dirtyMap = false;
 
 
 void sortTilePoints(SDL_GPUDevice* renderer){
-    SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
-
-    size_t maxVerts = BOARD_WIDTH * BOARD_HEIGHT * 12 * sizeof(Tile_Vertex);
-    size_t maxInds = BOARD_WIDTH * BOARD_HEIGHT * 18 * sizeof(int);
-    Uint32 totalSize = (Uint32)(maxVerts + maxInds);
-
-    SDL_GPUTransferBufferCreateInfo tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)totalSize };
-    SDL_GPUTransferBuffer* tbuf = SDL_CreateGPUTransferBuffer(renderer, &tbufInfo);
-
-    Uint8* mapPtr = (Uint8*)SDL_MapGPUTransferBuffer(renderer, tbuf, false);
-
-    SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
-
 
     SDL_FPoint lastPoint = {0,0};
     SDL_FPoint rightVec = { (float)TILE_SIZE + 1,  (float)TILE_SIZE/2 };
@@ -34,7 +21,6 @@ void sortTilePoints(SDL_GPUDevice* renderer){
     std::vector<Tile_Vertex> vertices;
     std::vector<int> indices;
 
-    tileIndexSize = 0;
     for (int x = 0; x < BOARD_WIDTH; x++)
     {
         lastPoint = {0  + (x*rightVec.x), 0 + (x*rightVec.y)};
@@ -114,28 +100,6 @@ void sortTilePoints(SDL_GPUDevice* renderer){
         }   
     }
 
-    tileIndexSize = (Uint32)indices.size();
-
-    size_t vertSize = vertices.size() * sizeof(Tile_Vertex);
-    size_t indexSize = indices.size() * sizeof(int);
-    if(vertSize > 0){
-        memcpy(mapPtr + 0, vertices.data(), vertSize);
-    }
-    if(indexSize > 0){
-        memcpy((Uint8*)mapPtr + vertSize, indices.data(), indexSize);
-    }
-
-    SDL_GPUTransferBufferLocation vertSrc = { tbuf, 0 };
-    SDL_GPUBufferRegion vertDst = { tileVBuf,  0, (Uint32)vertSize};
-    SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
-
-    SDL_GPUTransferBufferLocation indexSrc = { tbuf, (Uint32)vertSize };
-    SDL_GPUBufferRegion indexDst = { tileIBuf,  0, (Uint32)indexSize};
-    SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
-    
-    SDL_UnmapGPUTransferBuffer(renderer, tbuf);
-    SDL_EndGPUCopyPass(copyPass);
-    SDL_SubmitGPUCommandBuffer(cmd);
-    SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
+    renderLayers[MAP_RENDER_LAYER]->writeBuffers(renderer, indices, vertices);
     dirtyMap = false;
 }

@@ -25,7 +25,7 @@ bool checkSizeValidity(std::vector<SDL_Point> shape, SDL_Point n, bool checkWalk
 std::vector<SDL_Point> _getPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize, Entity* targetEntity, bool checkWalkability){
     std::vector<SDL_Point> path;
 
-    int gridSize = 0;
+    int gridSize = 1;
     std::vector<SDL_Point> shape = {{0, 0}};
 
     if(targetEntity){
@@ -200,7 +200,7 @@ std::vector<SDL_Point> getStraightPath(SDL_Point origin, SDL_Point target, int m
     return path;
 }
 std::vector<SDL_Point> getDiamond(SDL_Point origin, int maxSize, int minSize, Entity* targetEntity, bool checkWalkability){
-    int gridSize = 0;
+    int gridSize = 1;
     std::vector<SDL_Point> shape = {{0, 0}};
 
     if(targetEntity){
@@ -238,7 +238,7 @@ std::vector<SDL_Point> getDiamond(SDL_Point origin, int maxSize, int minSize, En
     return reachMap;
 }
 std::vector<SDL_Point> getLine(SDL_Point origin, Direction direction, int maxSize, int minSize, Entity* targetEntity, bool checkWalkability){
-    int gridSize = 0;
+    int gridSize = 1;
     std::vector<SDL_Point> shape = {{0, 0}};
 
     if(targetEntity){

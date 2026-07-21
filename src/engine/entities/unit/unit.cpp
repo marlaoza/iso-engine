@@ -331,25 +331,9 @@ Unit* HOVERED_UNIT;
 std::unordered_set<Unit*> units;
 
 void sortUnits(SDL_GPUDevice* renderer){
-    SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
-
-    size_t maxVerts = units.size() * 4 * sizeof(Entity_Vertex);
-    size_t maxInds = units.size() * 6 * sizeof(int);
-    Uint32 totalSize = (Uint32)(maxVerts + maxInds);
-
-    SDL_GPUTransferBufferCreateInfo tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)totalSize };
-    SDL_GPUTransferBuffer* tbuf = SDL_CreateGPUTransferBuffer(renderer, &tbufInfo);
-
-    Uint8* buffPtr = (Uint8*)SDL_MapGPUTransferBuffer(renderer, tbuf, false);
-
-    SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
-
     int vertexOffset = 0;
     std::vector<Entity_Vertex> vertices;
     std::vector<int> indices;
-    
-    unitIndexSize = 0;
-    
     clearHighlightRegion(2);
 
     for (Unit* u : units)
@@ -399,30 +383,6 @@ void sortUnits(SDL_GPUDevice* renderer){
         vertexOffset+=4;
     }
 
-
-    unitIndexSize = (Uint32)indices.size();
-
-
-    size_t vertSize = vertices.size() * sizeof(Entity_Vertex);
-    size_t indexSize = indices.size() * sizeof(int);
-    if(vertSize > 0){
-        memcpy(buffPtr + 0, vertices.data(), vertSize);
-    }
-    if(indexSize > 0){
-        memcpy((Uint8*)buffPtr + vertSize, indices.data(), indexSize);
-    }
-
-    SDL_GPUTransferBufferLocation vertSrc = { tbuf, 0 };
-    SDL_GPUBufferRegion vertDst = { unitVBuf,  0, (Uint32)vertSize};
-    SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
-
-    SDL_GPUTransferBufferLocation indexSrc = { tbuf, (Uint32)vertSize };
-    SDL_GPUBufferRegion indexDst = { unitIBuf,  0, (Uint32)indexSize};
-    SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
-    
-    SDL_UnmapGPUTransferBuffer(renderer, tbuf);
-    SDL_EndGPUCopyPass(copyPass);
-    SDL_SubmitGPUCommandBuffer(cmd);
-    SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
+    renderLayers[UNIT_RENDER_LAYER]->writeBuffers(renderer, indices, vertices);
     dirtyUnits = false;
 }

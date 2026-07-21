@@ -273,8 +273,13 @@ int main(int argc, char *argv[]){
     while(true){
         calculateDeltaTime();
 
-        if(SDL_PollEvent(&windowEvent)){
-            if(windowEvent.type == SDL_EVENT_QUIT){break;}
+        while(SDL_PollEvent(&windowEvent)){
+            if(windowEvent.type == SDL_EVENT_QUIT){
+                destroyRenderer(renderer);
+                SDL_DestroyWindow(window);
+                SDL_Quit();
+                return EXIT_SUCCESS;
+            }
             if(windowEvent.type == SDL_EVENT_KEY_DOWN){onKeyDown(windowEvent.key.key);}
             if(windowEvent.type == SDL_EVENT_KEY_UP){onKeyUp(windowEvent.key.key);}
             if(windowEvent.type == SDL_EVENT_MOUSE_MOTION){onMouseMotion(windowEvent.motion);}

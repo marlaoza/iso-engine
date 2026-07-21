@@ -8,8 +8,6 @@ void loadHighlightQuad(SDL_GPUDevice* renderer){
     std::vector<Base_Vertex> vertices;
     std::vector<int> indices;
 
-    highlightIndexSize = 0;
-
     IsoObject body = tiles[1 * BOARD_WIDTH + 1].tile;
 
     SDL_FPoint tl = {0, 0};
@@ -28,52 +26,13 @@ void loadHighlightQuad(SDL_GPUDevice* renderer){
     indices.push_back(2);
     indices.push_back(3);
 
-    SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
-
-    size_t vertSize = vertices.size() * sizeof(Base_Vertex);
-    size_t indexSize = indices.size() * sizeof(int);
-    Uint32 totalSize = (Uint32)(vertSize + indexSize);
-
-    if(totalSize > 0){
-
-        SDL_GPUTransferBufferCreateInfo tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)totalSize };
-        SDL_GPUTransferBuffer* tbuf = SDL_CreateGPUTransferBuffer(renderer, &tbufInfo);
-
-        Uint8* mapPtr = (Uint8*)SDL_MapGPUTransferBuffer(renderer, tbuf, false);
-
-        SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
-
-
-        highlightIndexSize = (Uint32)indices.size();
-
-        if(vertSize > 0){
-            memcpy(mapPtr + 0, vertices.data(), vertSize);
-        }
-        if(indexSize > 0){
-            memcpy((Uint8*)mapPtr + vertSize, indices.data(), indexSize);
-        }
-       
-        SDL_GPUTransferBufferLocation vertSrc = { tbuf, 0 };
-        SDL_GPUBufferRegion vertDst = { highlightVBuf,  0, (Uint32)vertSize};
-        SDL_UploadToGPUBuffer(copyPass, &vertSrc, &vertDst, false);
-
-        SDL_GPUTransferBufferLocation indexSrc = { tbuf, (Uint32)vertSize };
-        SDL_GPUBufferRegion indexDst = { highlightIBuf,  0, (Uint32)indexSize};
-        SDL_UploadToGPUBuffer(copyPass, &indexSrc, &indexDst, false);
-        
-        SDL_UnmapGPUTransferBuffer(renderer, tbuf);
-        SDL_EndGPUCopyPass(copyPass);
-        SDL_SubmitGPUCommandBuffer(cmd);
-        SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
-    }
+    renderLayers[HIGHLIGHT_RENDER_LAYER]->writeBuffers(renderer, indices, vertices);
+    
 };
 
 void sortHighlights(SDL_GPUDevice* renderer){
 
     std::vector<Highlight_Data> fragments;
-
-    highlightDataSize = 0;
-
 
     SDL_Point neighbors[8] = {
         {-1,-1},{ 0,-1},{ 1,-1},
@@ -110,37 +69,7 @@ void sortHighlights(SDL_GPUDevice* renderer){
         fragments.push_back({body.surface[0], SELECTED_TILE.x, SELECTED_TILE.y, 1, 0});
     }
 
-
-    SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
-
-    size_t fragSize = fragments.size() * sizeof(Highlight_Data);
-    Uint32 totalSize = (Uint32)(fragSize);
-
-    if(totalSize > 0){
-
-        SDL_GPUTransferBufferCreateInfo tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)totalSize };
-        SDL_GPUTransferBuffer* tbuf = SDL_CreateGPUTransferBuffer(renderer, &tbufInfo);
-
-        Uint8* mapPtr = (Uint8*)SDL_MapGPUTransferBuffer(renderer, tbuf, false);
-
-        SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
-
-
-        highlightDataSize = (Uint32)fragments.size();
-
-        if(fragSize > 0){
-            memcpy(mapPtr + 0, fragments.data(), fragSize);
-        }
-
-        SDL_GPUTransferBufferLocation fragSrc = { tbuf, 0};
-        SDL_GPUBufferRegion fragDst = { highlightFBuf,  0, (Uint32)fragSize};
-        SDL_UploadToGPUBuffer(copyPass, &fragSrc, &fragDst, false);
-        
-        SDL_UnmapGPUTransferBuffer(renderer, tbuf);
-        SDL_EndGPUCopyPass(copyPass);
-        SDL_SubmitGPUCommandBuffer(cmd);
-        SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
-    }
+    renderLayers[HIGHLIGHT_RENDER_LAYER]->writeBuffers(renderer, fragments);
     dirtyHighlights = false;
 }
 

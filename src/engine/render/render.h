@@ -1,8 +1,11 @@
 #pragma once
 #include "SDL_gpu.h"
 #include <vector>
+#include <map>
+#include <string>
 #include "constants.h"
 #include <SDL3_ttf/SDL_ttf.h>
+#include "renderLayer/renderLayer.h"
 
 extern SDL_GPUDevice* renderer;
 
@@ -101,29 +104,17 @@ extern SDL_GPUSampler* uiSampler;
 
 void loadUISpriteSheet(SDL_GPUDevice* renderer, const char* path);
 
-extern SDL_GPUBuffer* tileVBuf;
-extern SDL_GPUBuffer* tileIBuf;
-extern int tileIndexSize;
+#define RENDER_LAYERS_AMT 8
+#define MAP_RENDER_LAYER 0
+#define HIGHLIGHT_RENDER_LAYER 1
+#define UNIT_RENDER_LAYER 2
+#define ENTITY_RENDER_LAYER 3
+#define PROJECTILE_RENDER_LAYER 4
+#define PARTICLE_RENDER_LAYER 5
+#define UI_RENDER_LAYER 6
+#define UI_TEXT_RENDER_LAYER 7
 
-extern SDL_GPUBuffer* highlightVBuf;
-extern SDL_GPUBuffer* highlightIBuf;
-extern SDL_GPUBuffer* highlightFBuf;
-extern int highlightIndexSize;
-extern int highlightDataSize;
-
-extern SDL_GPUBuffer* particleVBuf;
-extern SDL_GPUBuffer* particleIBuf;
-extern SDL_GPUBuffer* particleFBuf;
-extern int particleIndexSize;
-extern int particleDataSize;
-
-extern SDL_GPUBuffer* unitVBuf;
-extern SDL_GPUBuffer* unitIBuf;
-extern int unitIndexSize;
-
-extern SDL_GPUBuffer* projectileVBuf;
-extern SDL_GPUBuffer* projectileIBuf;
-extern int projectileIndexSize;
+extern RenderLayer* renderLayers[RENDER_LAYERS_AMT];
 
 extern SDL_GPUBuffer* UIVBuf;
 extern SDL_GPUBuffer* UIIBuf;

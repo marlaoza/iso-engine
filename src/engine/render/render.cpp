@@ -54,30 +54,7 @@ SDL_GPUGraphicsPipeline* UIPipeline;
 SDL_GPUGraphicsPipeline* textPipeline;
 SDL_GPUGraphicsPipeline* particlePipeline;
 
-
-SDL_GPUBuffer* tileVBuf;
-SDL_GPUBuffer* tileIBuf;
-int tileIndexSize = 0;
-
-SDL_GPUBuffer* highlightVBuf;
-SDL_GPUBuffer* highlightIBuf;
-SDL_GPUBuffer* highlightFBuf;
-int highlightIndexSize = 0;
-int highlightDataSize = 0;
-
-SDL_GPUBuffer* particleVBuf;
-SDL_GPUBuffer* particleIBuf;
-SDL_GPUBuffer* particleFBuf;
-int particleIndexSize = 0;
-int particleDataSize = 0;
-
-SDL_GPUBuffer* unitVBuf;
-SDL_GPUBuffer* unitIBuf;
-int unitIndexSize = 0;
-
-SDL_GPUBuffer* projectileVBuf;
-SDL_GPUBuffer* projectileIBuf;
-int projectileIndexSize = 0;
+RenderLayer* renderLayers[RENDER_LAYERS_AMT];
 
 SDL_GPUBuffer* UIVBuf;
 SDL_GPUBuffer* UIIBuf;
@@ -856,27 +833,6 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
 
 
         SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmd, &colorTarget, 1, &depthTarget);
-        
-        SDL_GPUBufferBinding tileVBinding = { .buffer = tileVBuf, .offset = 0 };
-        SDL_GPUBufferBinding tileIBinding = { .buffer = tileIBuf, .offset = 0 };
-
-        SDL_GPUBufferBinding unitVBinding = { .buffer = unitVBuf, .offset = 0 };
-        SDL_GPUBufferBinding unitIBinding = { .buffer = unitIBuf, .offset = 0 };
-
-        SDL_GPUBufferBinding projectileVBinding = { .buffer = projectileVBuf, .offset = 0 };
-        SDL_GPUBufferBinding projectileIBinding = { .buffer = projectileIBuf, .offset = 0 };
-
-         SDL_GPUBufferBinding highlightBindings[2] = { 
-            { highlightVBuf, 0 }, 
-            { highlightFBuf, 0 } 
-        };
-        SDL_GPUBufferBinding highlightIBinding = { .buffer = highlightIBuf, .offset = 0 };
-
-        SDL_GPUBufferBinding particleBindings[2] = { 
-            { particleVBuf, 0 }, 
-            { particleFBuf, 0 } 
-        };
-        SDL_GPUBufferBinding particleIBinding = { .buffer = particleIBuf, .offset = 0 };
 
         SDL_GPUBufferBinding UIVBinding = { .buffer = UIVBuf, .offset = 0 };
         SDL_GPUBufferBinding UIIBinding = { .buffer = UIIBuf, .offset = 0 };
@@ -884,33 +840,8 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
         SDL_GPUBufferBinding textVBinding = { .buffer = textVBuf, .offset = 0 };
         SDL_GPUBufferBinding textIBinding = { .buffer = textIBuf, .offset = 0 };
         
-        SDL_BindGPUGraphicsPipeline(renderPass, pipeline); 
         SDL_PushGPUVertexUniformData(cmd, 0, &myData, sizeof(myData));
-        SDL_BindGPUVertexBuffers(renderPass, 0, &tileVBinding, 1);
-        SDL_BindGPUIndexBuffer(renderPass, &tileIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-        SDL_DrawGPUIndexedPrimitives(renderPass, tileIndexSize, 1, 0, 0, 0);
-
-        SDL_BindGPUGraphicsPipeline(renderPass, highLightPipeline); 
-        SDL_BindGPUVertexBuffers(renderPass, 0, highlightBindings, 2);
-        SDL_BindGPUIndexBuffer(renderPass, &highlightIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-        SDL_DrawGPUIndexedPrimitives(renderPass, highlightIndexSize, highlightDataSize, 0, 0, 0);
-
-        SDL_BindGPUGraphicsPipeline(renderPass, entityPipeline); 
-        SDL_GPUTextureSamplerBinding unitBinding = { .texture = unitTextureArray, .sampler = unitSampler };
-        SDL_BindGPUFragmentSamplers(renderPass, 0, &unitBinding, 1);
-
-        SDL_BindGPUVertexBuffers(renderPass, 0, &unitVBinding, 1);
-        SDL_BindGPUIndexBuffer(renderPass, &unitIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-        SDL_DrawGPUIndexedPrimitives(renderPass, unitIndexSize, 1, 0, 0, 0);
-
-        SDL_BindGPUVertexBuffers(renderPass, 0, &projectileVBinding, 1);
-        SDL_BindGPUIndexBuffer(renderPass, &projectileIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-        SDL_DrawGPUIndexedPrimitives(renderPass, projectileIndexSize, 1, 0, 0, 0);
-
-        SDL_BindGPUGraphicsPipeline(renderPass, particlePipeline); 
-        SDL_BindGPUVertexBuffers(renderPass, 0, particleBindings, 2);
-        SDL_BindGPUIndexBuffer(renderPass, &particleIBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-        SDL_DrawGPUIndexedPrimitives(renderPass, particleIndexSize, particleDataSize, 0, 0, 0);
+        for (const auto& r : renderLayers){if(r) r->draw(renderPass);}
 
         SDL_EndGPURenderPass(renderPass);
 
@@ -943,8 +874,6 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
 
             SDL_EndGPURenderPass(uiPass);
         }
-
-
     }
     
     SDL_SubmitGPUCommandBuffer(cmd);
@@ -977,47 +906,37 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     createUIPipeline(renderer, window);
     createTextPipeline(renderer, window);
 
-    size_t vertSize = BOARD_HEIGHT*BOARD_WIDTH * 12 * sizeof(Tile_Vertex);
-    size_t indexSize = BOARD_HEIGHT*BOARD_WIDTH * 18 * sizeof(int);
-    SDL_GPUBufferCreateInfo vInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)vertSize };
-    SDL_GPUBufferCreateInfo iInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)indexSize };
-    tileVBuf = SDL_CreateGPUBuffer(renderer, &vInfo);
-    tileIBuf = SDL_CreateGPUBuffer(renderer, &iInfo);
+    SDL_Log("initing layers");
+    RenderLayer* mapLayer = new RenderLayer(sizeof(Tile_Vertex), 0, BOARD_HEIGHT*BOARD_WIDTH*3, 0);
+    mapLayer->bindPipeline(pipeline);
+    renderLayers[MAP_RENDER_LAYER] = mapLayer;
 
-    size_t highlightVertSize = 4 * sizeof(Base_Vertex);
-    size_t highlightIndexSize = 6 * sizeof(int);
-    size_t highlightFragmentSize = MAX_HL_LAYERS * BOARD_HEIGHT*BOARD_WIDTH * sizeof(Particle_Data);
-    SDL_GPUBufferCreateInfo highlightVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)highlightVertSize };
-    SDL_GPUBufferCreateInfo highlightIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)highlightIndexSize };
-    SDL_GPUBufferCreateInfo highlightFInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)highlightFragmentSize };
-    highlightVBuf = SDL_CreateGPUBuffer(renderer, &highlightVInfo);
-    highlightIBuf = SDL_CreateGPUBuffer(renderer, &highlightIInfo);
-    highlightFBuf = SDL_CreateGPUBuffer(renderer, &highlightFInfo);
+    RenderLayer* highlightLayer = new RenderLayer(sizeof(Base_Vertex), sizeof(Particle_Data), 1, MAX_HL_LAYERS * BOARD_HEIGHT*BOARD_WIDTH);
+    highlightLayer->bindPipeline(highLightPipeline);
+    renderLayers[HIGHLIGHT_RENDER_LAYER] = highlightLayer;
 
-    size_t particleVertSize = 4 * sizeof(Base_Vertex);
-    size_t particleIndexSize = 6 * sizeof(int);
-    size_t particleFragmentSize = BOARD_HEIGHT*BOARD_WIDTH * 200 * sizeof(Particle_Data);
-    SDL_GPUBufferCreateInfo particleVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)particleVertSize };
-    SDL_GPUBufferCreateInfo particleIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)particleIndexSize };
-    SDL_GPUBufferCreateInfo particleFInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)particleFragmentSize };
-    particleVBuf = SDL_CreateGPUBuffer(renderer, &particleVInfo);
-    particleIBuf = SDL_CreateGPUBuffer(renderer, &particleIInfo);
-    particleFBuf = SDL_CreateGPUBuffer(renderer, &particleFInfo);
+    RenderLayer* unitLayer = new RenderLayer(sizeof(Entity_Vertex), 0, MAX_UNITS, 0);
+    unitLayer->bindPipeline(entityPipeline);
+    unitLayer->bindTexture(unitTextureArray);
+    unitLayer->bindSampler(unitSampler);
+    renderLayers[UNIT_RENDER_LAYER] = unitLayer;
 
-    size_t unitVertSize = MAX_UNITS * 4 * sizeof(Entity_Vertex);
-    size_t unitIndexSize = MAX_UNITS * 6 * sizeof(int);
-    SDL_GPUBufferCreateInfo unitVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)unitVertSize };
-    SDL_GPUBufferCreateInfo unitIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)unitIndexSize };
-    unitVBuf = SDL_CreateGPUBuffer(renderer, &unitVInfo);
-    unitIBuf = SDL_CreateGPUBuffer(renderer, &unitIInfo);
+    RenderLayer* projectileLayer = new RenderLayer(sizeof(Entity_Vertex), 0, MAX_UNITS, 0);
+    projectileLayer->bindPipeline(entityPipeline);
+    renderLayers[PROJECTILE_RENDER_LAYER] = projectileLayer;
 
-    size_t projectileVertSize = MAX_UNITS * 4 * sizeof(Entity_Vertex);
-    size_t projectileIndexSize = MAX_UNITS * 6 * sizeof(int);
-    SDL_GPUBufferCreateInfo projectileVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)projectileVertSize };
-    SDL_GPUBufferCreateInfo projectileIInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX, .size = (Uint32)projectileIndexSize };
-    projectileVBuf = SDL_CreateGPUBuffer(renderer, &projectileVInfo);
-    projectileIBuf = SDL_CreateGPUBuffer(renderer, &projectileIInfo);
+    RenderLayer* particleLayer = new RenderLayer(sizeof(Base_Vertex), sizeof(Particle_Data), 1, BOARD_HEIGHT*BOARD_WIDTH * 50);
+    particleLayer->bindPipeline(particlePipeline);
+    // particleLayer->bindTexture(particleTextureArray);
+    // particleLayer->bindSampler(particleSampler);
+    renderLayers[PARTICLE_RENDER_LAYER] = particleLayer;
 
+    SDL_Log("creating buffers");
+    for (const auto& r : renderLayers){
+        if(r) r->createBuffers(renderer);
+    }
+
+    SDL_Log("layers created !");
     size_t UIVertSize = MAX_UI_ELEMENTS * 4 * sizeof(UI_Vertex);
     size_t UIBufferIndexSize = MAX_UI_ELEMENTS * 6 * sizeof(int);
     SDL_GPUBufferCreateInfo UIVInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = (Uint32)UIVertSize };
@@ -1032,24 +951,13 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     textVBuf = SDL_CreateGPUBuffer(renderer, &textVInfo);
     textIBuf = SDL_CreateGPUBuffer(renderer, &textIInfo);
 
-    
-
     return renderer;
 }
 
 void destroyRenderer(SDL_GPUDevice* renderer){
-    SDL_ReleaseGPUBuffer(renderer,tileVBuf);
-    SDL_ReleaseGPUBuffer(renderer,tileIBuf);
-    SDL_ReleaseGPUBuffer(renderer,unitVBuf);
-    SDL_ReleaseGPUBuffer(renderer,unitIBuf);
-    SDL_ReleaseGPUBuffer(renderer, projectileVBuf);
-    SDL_ReleaseGPUBuffer(renderer, projectileIBuf);
-    SDL_ReleaseGPUBuffer(renderer,highlightVBuf);
-    SDL_ReleaseGPUBuffer(renderer,highlightIBuf);
-    SDL_ReleaseGPUBuffer(renderer,highlightFBuf);
-    SDL_ReleaseGPUBuffer(renderer,particleVBuf);
-    SDL_ReleaseGPUBuffer(renderer,particleIBuf);
-    SDL_ReleaseGPUBuffer(renderer,particleFBuf);
+
+   for (const auto& r : renderLayers){ if(r) r->clearBuffers(renderer);}
+
     SDL_ReleaseGPUBuffer(renderer,textVBuf);
     SDL_ReleaseGPUBuffer(renderer,textIBuf);
     
