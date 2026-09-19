@@ -3,6 +3,11 @@ Texture2DArray unitTextures : register(t0);
 [[vk::binding(0, 2)]]
 SamplerState unitSampler : register(s0);
 
+[[vk::binding(1, 2)]]
+Texture2D lightmapTex : register(t1);
+[[vk::binding(1, 2)]]
+SamplerState lightmapSampler : register(s1);
+
 struct PSInput {
     float4 pos : SV_POSITION;
     float2 uv: TEXCOORD0;
@@ -10,6 +15,7 @@ struct PSInput {
     int2 frameSize: TEXCOORD2;
     int direction: TEXCOORD3;
     int frame: TEXCOORD4;
+    nointerpolation float2 gridPos : TEXCOORD5; 
 };
 
 float4 main(PSInput input) : SV_Target {
@@ -22,6 +28,9 @@ float4 main(PSInput input) : SV_Target {
     float2 texturePos = float2((float)input.direction * (float)input.frameSize.x, (float)input.frame * (float)input.frameSize.y);
 
     if (texColor.a < 0.1) {discard;}
+
+    float4 lightColor = lightmapTex.Sample(lightmapSampler, input.gridPos);
+    texColor.rgb *= lightColor.rgb;
 
     return texColor;
 

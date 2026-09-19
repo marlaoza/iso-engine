@@ -10,8 +10,8 @@ cbuffer SceneData : register(b0) {
     float frameTime;
     int selectedX;
     int selectedY;
-    int mapSize;
-    int padding1;
+    int boardWidth;
+    int boardHeight;
 };
 
 struct VSInput {

@@ -11,6 +11,7 @@
 
 #include "effects/highlight/highlight.h"
 #include "effects/particle/particle.h"
+#include "effects/lightSource/lightSource.h"
 
 #include "managers/inputmanager/inputManager.h"
 #include "managers/dialogmanager/dialogManager.h"
@@ -254,22 +255,39 @@ int main(int argc, char *argv[]){
     if(renderer == NULL){
         return 1;
     }
-    createPrefabs();
 
+    SDL_Log("creating prefabs");
+    createPrefabs();
     loadParticlePrefabs();
     loadSpritePrefabs();
     loadProjectilePrefabs();
     loadSkillPrefabs();
+    SDL_Log("prefabs ok");
 
+    SDL_Log("creating unit UI");
     createUnitUI();
 
     toggleUnitUI(renderer);
+    SDL_Log("unit UI ok");
+
     sortTilePoints(renderer);
     loadParticleQuad(renderer);
     loadHighlightQuad(renderer);
+    
     SDL_Event windowEvent;
 
-    
+    SDL_Log("Adding lightSource");
+    LightSource l = {
+        .gridPos = {3,3},
+        .height = 1,
+        .radius = 5,
+        .intensity = 1.0,
+        .color = {1.0f, 0.5f, 0.3f, 1.0f}
+    };
+    lights.push_back(l);
+    dirtyLights = true;
+     SDL_Log("light ok");
+
     while(true){
         calculateDeltaTime();
 
@@ -343,10 +361,11 @@ int main(int argc, char *argv[]){
         for (Particle* p : particles){p->update();}
 
         if(dirtyMap)sortTilePoints(renderer);
-        if(dirtyHighlights)sortHighlights(renderer);
         if(dirtyUnits)sortUnits(renderer);
+        if(dirtyLights)sortLightmap(renderer);
         if(dirtyProjectiles)sortProjectiles(renderer);
         if(dirtyParticles)sortParticles(renderer);
+        if(dirtyHighlights)sortHighlights(renderer);
         if(dirtyUi)sortUiElements(renderer);
         render(renderer, window);
     }

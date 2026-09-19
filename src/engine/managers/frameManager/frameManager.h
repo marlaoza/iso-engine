@@ -30,8 +30,8 @@ struct SceneUniforms {
     float frameTime;
     int selectedX;
     int selectedY;
-    int mapSize;
-    int padding0;
+    int boardWidth;
+    int boardHeight;
 };
 
 struct MapCell {

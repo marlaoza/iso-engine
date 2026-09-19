@@ -10,8 +10,8 @@ cbuffer SceneData : register(b0) {
     float frameTime;
     int selectedX;
     int selectedY;
-    int mapSize;
-    int padding1;
+    int boardWidth;
+    int boardHeight;
 };
 
 struct VSInput {
@@ -29,6 +29,7 @@ struct VSOutput {
     float faceID : TEXCOORD0;
     float2 screenPos : TEXCOORD2;
     float2 uv : TEXCOORD4;
+    float2 lightUV : TEXCOORD5;
 };
 
 VSOutput main(VSInput input) {
@@ -40,7 +41,7 @@ VSOutput main(VSInput input) {
     float2 normCam = float2(camX, camY);
     
     float2 p = (normPos - normCam) * camZoom;
-        
+    int mapSize = boardWidth + boardHeight;
     float depth = (float)(input.gridPos.x + input.gridPos.y) / (float)mapSize;
 
     output.pos = float4((p.x / resolution.x) * 2.0 - 1.0, 
@@ -52,6 +53,7 @@ VSOutput main(VSInput input) {
     output.faceID = input.faceID;
     output.screenPos = input.pos;
     output.uv = input.uv;
+    output.lightUV = (float2(input.gridPos) + input.uv) / float2(boardWidth, boardHeight);
 
     return output;
 }

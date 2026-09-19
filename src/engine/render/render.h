@@ -6,6 +6,7 @@
 #include "constants.h"
 #include <SDL3_ttf/SDL_ttf.h>
 #include "renderLayer/renderLayer.h"
+#include "geometry/geometry.h"
 
 extern SDL_GPUDevice* renderer;
 
@@ -32,7 +33,7 @@ struct Entity_Vertex {
     int frameCount;
     int direction;
     int speed;
-    int32_t gridX, gridY;
+    float gridX, gridY;
     int indexOffset;
 };
 
@@ -99,10 +100,16 @@ extern TTF_Font* font_main;
 
 SDL_GPUTexture* createTextTexture(const char* text, SDL_FColor color, TTF_Font* font, int* width, int* height, int maxWidth = 0);
 
-extern SDL_GPUTexture* UISpriteSheet;
-extern SDL_GPUSampler* uiSampler;
+extern TexturePair* UITexture;
+// extern SDL_GPUTexture* UISpriteSheet;
+// extern SDL_GPUSampler* uiSampler;
 
 void loadUISpriteSheet(SDL_GPUDevice* renderer, const char* path);
+
+extern TexturePair* lightmapTexture;
+// extern SDL_GPUTexture* lightmapTexture;
+// extern SDL_GPUSampler* lightmapSampler;
+void createLightMapTexture(SDL_GPUDevice* renderer);
 
 #define RENDER_LAYERS_AMT 8
 #define MAP_RENDER_LAYER 0
