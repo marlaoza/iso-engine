@@ -16,7 +16,7 @@
 bool dirtyUnits = false;
 Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
 
- Unit::Unit(const std::string& name, SDL_Point gridPos, const UnitData& uData) : Entity(gridPos, 3) {
+ Unit::Unit(const std::string& name, SDL_Point gridPos, const UnitData& uData) : Entity(gridPos, 1) {
     this->id = units.size();
     this->name = name;
     this->gridOffset = {0, 0};
@@ -43,6 +43,7 @@ Unit* unitMap[BOARD_WIDTH * BOARD_HEIGHT];
     for (SDL_Point p : this->shape)
     {
         SDL_Point gridPoint = {this->gridPos.x + p.x, this->gridPos.y + p.y};
+        SDL_Log("%d | %d", gridPoint.x, gridPoint.y);
         if(
                (gridPoint.x >= BOARD_WIDTH)  || (gridPoint.x < 0)
             || (gridPoint.y >= BOARD_HEIGHT) || (gridPoint.y < 0)
@@ -357,22 +358,25 @@ void sortUnits(SDL_GPUDevice* renderer){
             {ptr.x + u->quadWidth, ptr.y},
         };
 
-        int indexSum = 0;
-
-        if(u->state == EntityState::Moving || u->state == EntityState::ForcedMoving){
-            SDL_FPoint normOffset = {fabs(u->gridOffset.x), fabs(u->gridOffset.y)};
-            if(u->gridPos.x < u->targetPos.x){if(normOffset.x > (float)(TILE_SIZE/3.0f)){indexSum = 1;}}
-            else if(u->gridPos.x > u->targetPos.x){if(normOffset.x > (float)(TILE_SIZE/1.5f)){indexSum = -1;}}
-            else if(u->gridPos.y < u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/3.0f){indexSum = 1;}}
-            else if(u->gridPos.y > u->targetPos.y){if(normOffset.y > (float)((TILE_SIZE)/2)/1.5f){indexSum = -1;}}
-        }
 
         SDL_FPoint UVS[4] = {
             {0.0f, 0.0f},{1.0f, 0.0f},
             {0.0f, 1.0f},{1.0f, 1.0f}
         };
-
-        for (int i = 0; i < 4; i++){vertices.push_back({points_p[i], UVS[i], anim.sheet->id, anim.frameWidth, anim.frameHeight, anim.frames, (int)u->direction, u->baseAnimSpeed * anim.speed, u->gridPos.x + u->gridPos.y, indexSum});}
+        SDL_FPoint interpolatedPositon = u->getInterpolatedGridPos();
+        for (int i = 0; i < 4; i++){
+            vertices.push_back(
+                {
+                    points_p[i], 
+                    UVS[i], 
+                    anim.sheet->id, 
+                    anim.frameWidth, 
+                    anim.frameHeight, 
+                    anim.frames, 
+                    (int)u->direction, 
+                    u->baseAnimSpeed * anim.speed, interpolatedPositon.x, interpolatedPositon.y, 0}
+            );
+        }
         indices.push_back(vertexOffset);
         indices.push_back(vertexOffset + 1);
         indices.push_back(vertexOffset + 2);

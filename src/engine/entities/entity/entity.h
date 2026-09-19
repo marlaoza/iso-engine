@@ -37,6 +37,7 @@ class Entity{
         virtual void update();
 
         void setPath(std::vector<SDL_Point> path);
+        SDL_FPoint getInterpolatedGridPos() const;
 
         virtual Animation& getCurrentAnimation();
 
@@ -61,3 +62,5 @@ class Entity{
 
         virtual void move();
 };
+
+

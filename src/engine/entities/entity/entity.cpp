@@ -2,6 +2,7 @@
 #include "managers/frameManager/frameManager.h"
 #include "effects/highlight/highlight.h"
 #include <cmath>
+#include <algorithm>
 
 
 Entity::Entity(SDL_Point gridPos, int gridSize){
@@ -14,10 +15,13 @@ Entity::Entity(SDL_Point gridPos, int gridSize){
 
     this->gridSize = gridSize;
     
-    int sizeOffset = (int)std::floor((this->gridSize/2) - 0.5);
+    int radius = gridSize / 2;
+    int sizeOffset = (gridSize % 2 == 0) ? (radius - 1) : 0;
     this->gridPos = {gridPos.x - sizeOffset, gridPos.y - sizeOffset};
 
-    for(int s = 1; s < (int)std::floor(this->gridSize/2)+1; s++ ){
+    this->shape.push_back({0, 0});
+
+    for (int s = 1; s <= radius; s++){
         int nc = 0;
         SDL_Point ns[9] = {
             {-1,-1},{ 0,-1},{ 1,-1},
@@ -25,6 +29,7 @@ Entity::Entity(SDL_Point gridPos, int gridSize){
             {-1, 1},{ 0, 1},{ 1, 1}
         };
         for(SDL_Point n : ns){
+            if (n.x == 0 && n.y == 0){ nc++; continue; }
             int multiply = s;
             if(this->gridSize % 2 == 0 && (nc != 1 && nc != 2 && nc != 4)){multiply -= 1;}
             this->shape.push_back({n.x*multiply, n.y*multiply});
@@ -113,4 +118,25 @@ void Entity::update(){
     }
 
     if(this->state == EntityState::Moving || this->state == EntityState::ForcedMoving) this->move();
+}
+
+
+
+SDL_FPoint Entity::getInterpolatedGridPos() const {
+    if (this->state != EntityState::Moving && this->state != EntityState::ForcedMoving) {
+        return { (float)this->gridPos.x, (float)this->gridPos.y };
+    }
+
+    SDL_FPoint target  = tiles[this->targetPos.y*BOARD_WIDTH + this->targetPos.x].tile.surface[0];
+    SDL_FPoint current = tiles[this->gridPos.y*BOARD_WIDTH + this->gridPos.x].tile.surface[0];
+    SDL_FPoint targetOffset = {target.x - current.x, target.y - current.y};
+
+    float totalDist = sqrtf(targetOffset.x*targetOffset.x + targetOffset.y*targetOffset.y);
+    float traveled  = sqrtf(this->gridOffset.x*this->gridOffset.x + this->gridOffset.y*this->gridOffset.y);
+    float t = (totalDist > 0.0001f) ? std::clamp(traveled / totalDist, 0.0f, 1.0f) : 0.0f;
+
+    return {
+        this->gridPos.x + t * (float)(this->targetPos.x - this->gridPos.x),
+        this->gridPos.y + t * (float)(this->targetPos.y - this->gridPos.y)
+    };
 }
