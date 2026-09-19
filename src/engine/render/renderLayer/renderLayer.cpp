@@ -21,22 +21,27 @@ void RenderLayer::createBuffers(SDL_GPUDevice* renderer){
 }
 
 void RenderLayer::draw(SDL_GPURenderPass* renderPass){
-    int bindingSize = 0;
+    int vertexBindings = 0;
     SDL_GPUBufferBinding vertexBinding[2];
-    if(vertexBuffer){ vertexBinding[0] = { .buffer = vertexBuffer, .offset = 0 }; bindingSize++; }
-    if(fragmentBuffer){ vertexBinding[1] = { .buffer = fragmentBuffer, .offset = 0 }; bindingSize++; }
+    if(vertexBuffer){ vertexBinding[0] = { .buffer = vertexBuffer, .offset = 0 }; vertexBindings++;}
+    if(fragmentBuffer){ vertexBinding[1] = { .buffer = fragmentBuffer, .offset = 0 }; vertexBindings++;}
     SDL_GPUBufferBinding indexBinding;
     if(indexBuffer) indexBinding = { .buffer = indexBuffer, .offset = 0 };
-    SDL_GPUTextureSamplerBinding textureBinding;
-    if(texture && sampler) textureBinding = {.texture = texture, .sampler = sampler};
 
+    int bindingSize = this->textures.size();
+    SDL_GPUTextureSamplerBinding bindings[bindingSize];
+    for (int i = 0; i<bindingSize; i++)
+    {
+        bindings[i] = {.texture = this->textures[i]->texture, .sampler = this->textures[i]->sampler};
+    }
+    
     SDL_BindGPUGraphicsPipeline(renderPass, pipeline);
 
-    SDL_BindGPUVertexBuffers(renderPass, 0, vertexBinding, bindingSize);
+    SDL_BindGPUVertexBuffers(renderPass, 0, vertexBinding, vertexBindings);
 
     SDL_BindGPUIndexBuffer(renderPass, &indexBinding, indexElementSize);
 
-    if(texture && sampler) SDL_BindGPUFragmentSamplers(renderPass, 0, &textureBinding, 1);
+    if(bindingSize > 0) SDL_BindGPUFragmentSamplers(renderPass, 0, bindings, bindingSize);
     
     SDL_DrawGPUIndexedPrimitives(renderPass, indexSize, dataSize, 0, 0, 0);
 }

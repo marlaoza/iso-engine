@@ -2,6 +2,7 @@
 #include "SDL_gpu.h"
 #include "vector"
 #include <SDL3/SDL.h>
+#include "geometry/geometry.h"
 
 class RenderLayer {
     private:
@@ -17,8 +18,7 @@ class RenderLayer {
         SDL_GPUIndexElementSize indexElementSize;
 
         SDL_GPUGraphicsPipeline* pipeline;
-        SDL_GPUTexture* texture;
-        SDL_GPUSampler* sampler;
+        std::vector<TexturePair*> textures;
 
         int maxElements;
         int maxFragmentSize;
@@ -30,8 +30,6 @@ class RenderLayer {
             this->maxFragmentSize = maxFragmentSize;
 
             pipeline = nullptr;
-            texture = nullptr;
-            sampler = nullptr;
 
             vertexBuffer = nullptr;
             indexBuffer = nullptr;
@@ -49,8 +47,7 @@ class RenderLayer {
         }
 
         void bindPipeline(SDL_GPUGraphicsPipeline* pipeline) {this->pipeline = pipeline; };
-        void bindTexture(SDL_GPUTexture* texture) {this->texture = texture; };
-        void bindSampler(SDL_GPUSampler* sampler) {this->sampler = sampler; };
+        void addTexture(TexturePair* texture) {this->textures.push_back(texture); };
 
         template<typename T, typename D>
         void writeBuffers(SDL_GPUDevice* renderer, std::vector<int> indexes, std::vector<T> vertices, std::vector<D> fragments){
@@ -92,7 +89,6 @@ class RenderLayer {
 
         template<typename T>
         void writeBuffers(SDL_GPUDevice* renderer, std::vector<int> indexes, std::vector<T> vertices){
-            SDL_Log("loading vertex and index buffers");
             SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
 
             size_t vertSize = vertices.size() * vertexShape;
@@ -121,12 +117,10 @@ class RenderLayer {
             SDL_EndGPUCopyPass(copyPass);
             SDL_SubmitGPUCommandBuffer(cmd);
             SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
-            SDL_Log("loaded vertex and index buffers");
         }
 
         template<typename T>
         void writeBuffers(SDL_GPUDevice* renderer, std::vector<T> fragments){
-            SDL_Log("loading fragment buffer");
             SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
 
             size_t fragmentSize = fragments.size() * fragmentShape;
@@ -148,7 +142,6 @@ class RenderLayer {
             SDL_EndGPUCopyPass(copyPass);
             SDL_SubmitGPUCommandBuffer(cmd);
             SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
-            SDL_Log("loaded");
         }
 
         void draw(SDL_GPURenderPass* renderPass);

@@ -3,6 +3,8 @@
 #include "SDL_pixels.h"
 #include <vector>
 #include <constants.h>
+#include "SDL_gpu.h"
+
 class Entity;
 class Unit;
 
@@ -44,6 +46,17 @@ struct IsoObject {
     SDL_FPoint surface[4];
     SDL_FPoint wall[6];
 };
+
+struct TexturePair {
+    SDL_GPUTexture* texture;
+    SDL_GPUSampler* sampler;
+};
+struct Node {SDL_Point pos; int cost;};
+std::vector<Node> floodLight(SDL_Point origin, int size);
+
+float distance(SDL_FPoint a, SDL_FPoint b);
+float distance(SDL_Point a, SDL_Point b);
+
 std::vector<SDL_Point> _getPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize = 0, Entity* targetEntity = nullptr, bool checkWalkability = true);
 std::vector<SDL_Point> getPath(SDL_Point origin, SDL_Point target, int maxSize, Unit* targetUnit = nullptr, int minSize = 0, bool checkWalkability = true);
 std::vector<SDL_Point> getStraightPath(SDL_Point origin, SDL_Point target, int maxSize, int minSize = 0, bool checkWalkability = true);

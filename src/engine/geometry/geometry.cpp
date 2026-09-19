@@ -199,6 +199,42 @@ std::vector<SDL_Point> getStraightPath(SDL_Point origin, SDL_Point target, int m
 
     return path;
 }
+
+
+std::vector<Node> floodLight(SDL_Point origin, int size){
+    std::vector<Node> map;
+    map.push_back({origin, 0});
+    int uId = origin.y*BOARD_WIDTH + origin.x;
+            
+    std::vector<int> visited(BOARD_WIDTH * BOARD_HEIGHT, 999);
+    std::queue<SDL_Point> pointQueue;
+    pointQueue.push(origin);
+    visited[uId] = 0;
+
+    while(!pointQueue.empty()){
+        SDL_Point cur = pointQueue.front(); pointQueue.pop();
+        int cId = cur.y * BOARD_WIDTH + cur.x;
+        int cDist = visited[cId];
+        int cheight = tiles[cId].height;
+        if(cDist >= size) continue;
+        SDL_Point neighbors[4] = {
+            {cur.x + 1, cur.y}, {cur.x - 1, cur.y},
+            {cur.x, cur.y + 1}, {cur.x, cur.y - 1}
+        };
+        for(SDL_Point n : neighbors){
+            int nId = n.y * BOARD_WIDTH + n.x;
+            if (n.x < 0 || n.x >= BOARD_WIDTH || n.y < 0 ||  n.y >= BOARD_HEIGHT) {continue;}
+            if (tiles[nId].height - cheight > 1) {continue;}
+            if (visited[nId] != 999) continue;
+            visited[nId] = cDist + 1;
+            if (tiles[nId].height - cheight == 1 || cheight - tiles[nId].height == 1) {visited[nId] += 1;}
+            pointQueue.push(n);
+            map.push_back({n, visited[nId]});
+        }
+    }
+    return map;
+}
+
 std::vector<SDL_Point> getDiamond(SDL_Point origin, int maxSize, int minSize, Entity* targetEntity, bool checkWalkability){
     int gridSize = 1;
     std::vector<SDL_Point> shape = {{0, 0}};
@@ -421,4 +457,17 @@ SDL_Point getDirectionVector(Direction d){
         default:
             break;
     }
+}
+
+
+float distance(SDL_Point a, SDL_Point b){
+    float dx = a.x - b.x;
+    float dy = a.y - b.y;
+    return sqrtf(dx*dx + dy*dy);
+}
+
+float distance(SDL_FPoint a, SDL_FPoint b){
+    float dx = a.x - b.x;
+    float dy = a.y - b.y;
+    return sqrtf(dx*dx + dy*dy);
 }
