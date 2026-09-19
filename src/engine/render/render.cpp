@@ -826,6 +826,139 @@ void createParticlePipeline(SDL_GPUDevice* renderer, SDL_Window* window){
     particleSampler = SDL_CreateGPUSampler(renderer, &samplerInfo);
 }
 
+
+SDL_GPUTexture* virtualCanvas;
+SDL_GPUTexture* virtualCanvasDepth;
+
+SDL_GPUSampler* virtualCanvasSampler;
+SDL_GPUGraphicsPipeline* virtualCanvasPipeline;
+void createCanvasPipeline(SDL_GPUDevice* renderer, SDL_Window* window){
+    SDL_GPUGraphicsPipelineCreateInfo pipelineInfo = {};
+
+    SDL_GPUVertexAttribute attributes[6];
+
+    //VERTEX
+    attributes[0].location = 0;
+    attributes[0].buffer_slot = 0;
+    attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;  //POS
+    attributes[0].offset = 0;
+
+    attributes[1].location = 1;
+    attributes[1].buffer_slot = 0;
+    attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;  //UV
+    attributes[1].offset = (sizeof(float)*2);
+
+    pipelineInfo.vertex_shader = loadShader(renderer, "src/assets/shaders/canvas/vertShader",SDL_GPU_SHADERSTAGE_VERTEX, 0);
+    pipelineInfo.fragment_shader = loadShader(renderer, "src/assets/shaders/canvas/fragShader",SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
+
+    SDL_GPUVertexBufferDescription binding_desc[1];
+    binding_desc[0].slot = 0;
+    binding_desc[0].pitch = sizeof(Base_Vertex); 
+    binding_desc[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+
+
+    pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
+    pipelineInfo.vertex_input_state.vertex_buffer_descriptions = binding_desc;
+
+    pipelineInfo.vertex_input_state.vertex_attributes = attributes;
+    pipelineInfo.vertex_input_state.num_vertex_attributes = 2;
+
+    pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+
+    pipelineInfo.target_info.num_color_targets = 1;
+    pipelineInfo.target_info.color_target_descriptions = (SDL_GPUColorTargetDescription[]){{
+        .format = SDL_GetGPUSwapchainTextureFormat(renderer, window),
+        .blend_state = { 
+            .src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA,
+            .dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+            .color_blend_op = SDL_GPU_BLENDOP_ADD,
+            .src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE,
+            .dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ZERO,
+            .alpha_blend_op = SDL_GPU_BLENDOP_ADD,
+            .enable_blend = false,
+        }
+    }};
+
+    pipelineInfo.depth_stencil_state.enable_depth_test = false;
+    pipelineInfo.depth_stencil_state.enable_depth_write = false;
+    pipelineInfo.target_info.has_depth_stencil_target = false;
+
+    virtualCanvasPipeline = SDL_CreateGPUGraphicsPipeline(renderer, &pipelineInfo);
+    if (virtualCanvasPipeline == NULL) {SDL_Log("Canvas Pipeline creation failed: %s", SDL_GetError());}
+}
+
+void createVirtualCanvas(SDL_GPUDevice* renderer, SDL_Window* window, int w, int h){
+    if(virtualCanvas) SDL_ReleaseGPUTexture(renderer, virtualCanvas);
+    if(virtualCanvasDepth) SDL_ReleaseGPUTexture(renderer, virtualCanvasDepth);
+
+    SDL_GPUTextureCreateInfo colorInfo = {};
+    colorInfo.type = SDL_GPU_TEXTURETYPE_2D;
+    colorInfo.format = SDL_GetGPUSwapchainTextureFormat(renderer, window);
+    colorInfo.width = w; colorInfo.height = h;
+    colorInfo.layer_count_or_depth = 1; colorInfo.num_levels = 1;
+    colorInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
+    virtualCanvas = SDL_CreateGPUTexture(renderer, &colorInfo);
+
+    SDL_GPUTextureCreateInfo depthInfo = colorInfo;
+    depthInfo.format = SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT;
+    depthInfo.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
+    virtualCanvasDepth = SDL_CreateGPUTexture(renderer, &depthInfo);
+
+    SDL_GPUSamplerCreateInfo samplerInfo = {};
+    samplerInfo.min_filter = SDL_GPU_FILTER_NEAREST;
+    samplerInfo.mag_filter = SDL_GPU_FILTER_NEAREST;
+    samplerInfo.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    samplerInfo.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    virtualCanvasSampler = SDL_CreateGPUSampler(renderer, &samplerInfo);
+}
+
+SDL_GPUBuffer* canvasQuadVBuf = nullptr;
+SDL_GPUBuffer* canvasQuadIBuf = nullptr;
+void updateCanvasQuad(SDL_GPUDevice* renderer){
+    int canvasW =  ZOOM_LEVELS[CAM_ZOOM].x;
+    int canvasH = ZOOM_LEVELS[CAM_ZOOM].y;
+    
+    int scale = std::max(1, std::min(WIDTH / canvasW, HEIGHT / canvasH));
+    int blitW = canvasW * scale, blitH = canvasH * scale;
+    int offX = (WIDTH - blitW) / 2, offY = (HEIGHT - blitH) / 2;
+
+
+    Base_Vertex verts[4] = {
+        { {(float)offX,         (float)offY},         {0.0f, 0.0f} },
+        { {(float)(offX+blitW), (float)offY},         {1.0f, 0.0f} },
+        { {(float)offX,         (float)(offY+blitH)}, {0.0f, 1.0f} },
+        { {(float)(offX+blitW), (float)(offY+blitH)}, {1.0f, 1.0f} },
+    };
+    int idx[6] = {0,1,2, 1,2,3};
+
+    if(canvasQuadVBuf) SDL_ReleaseGPUBuffer(renderer, canvasQuadVBuf);
+    if(canvasQuadIBuf) SDL_ReleaseGPUBuffer(renderer, canvasQuadIBuf);
+
+    SDL_GPUBufferCreateInfo vInfo = { .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = sizeof(verts) };
+    SDL_GPUBufferCreateInfo iInfo = { .usage = SDL_GPU_BUFFERUSAGE_INDEX,  .size = sizeof(idx) };
+    canvasQuadVBuf = SDL_CreateGPUBuffer(renderer, &vInfo);
+    canvasQuadIBuf = SDL_CreateGPUBuffer(renderer, &iInfo);
+
+    SDL_GPUTransferBufferCreateInfo tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)(sizeof(verts)+sizeof(idx)) };
+    SDL_GPUTransferBuffer* tbuf = SDL_CreateGPUTransferBuffer(renderer, &tbufInfo);
+    Uint8* ptr = (Uint8*)SDL_MapGPUTransferBuffer(renderer, tbuf, false);
+    memcpy(ptr, verts, sizeof(verts));
+    memcpy(ptr + sizeof(verts), idx, sizeof(idx));
+    SDL_UnmapGPUTransferBuffer(renderer, tbuf);
+
+    SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
+    SDL_GPUCopyPass* copy = SDL_BeginGPUCopyPass(cmd);
+    SDL_GPUTransferBufferLocation vSrc = { tbuf, 0 };
+    SDL_GPUBufferRegion vDst = { canvasQuadVBuf, 0, sizeof(verts) };
+    SDL_UploadToGPUBuffer(copy, &vSrc, &vDst, false);
+    SDL_GPUTransferBufferLocation iSrc = { tbuf, (Uint32)sizeof(verts) };
+    SDL_GPUBufferRegion iDst = { canvasQuadIBuf, 0, sizeof(idx) };
+    SDL_UploadToGPUBuffer(copy, &iSrc, &iDst, false);
+    SDL_EndGPUCopyPass(copy);
+    SDL_SubmitGPUCommandBuffer(cmd);
+    SDL_ReleaseGPUTransferBuffer(renderer, tbuf);
+}
+
 void render(SDL_GPUDevice* renderer, SDL_Window* window){
     if(renderer == NULL){return;}
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(renderer);
@@ -834,7 +967,7 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
     Uint32 heigth = (Uint32)HEIGHT;
 
     if(SDL_WaitAndAcquireGPUSwapchainTexture(cmd, window, &swapchainTexture, &width, &heigth)){
-        SceneUniforms myData = { (float)WIDTH, (float)HEIGHT, MOUSE_POS.x, MOUSE_POS.y, CAM_POS.x, CAM_POS.y, CAM_ZOOM, FRAME_TIME, SELECTED_TILE.x, SELECTED_TILE.y, BOARD_WIDTH, BOARD_HEIGHT };
+        SceneUniforms myData = { (float)WIDTH, (float)HEIGHT, MOUSE_POS.x, MOUSE_POS.y, CAM_POS.x, CAM_POS.y, 0.0, FRAME_TIME, SELECTED_TILE.x, SELECTED_TILE.y, BOARD_WIDTH, BOARD_HEIGHT, ZOOM_LEVELS[CAM_ZOOM].x, ZOOM_LEVELS[CAM_ZOOM].y };
 
         SDL_GPUColorTargetInfo colorTarget{};
         colorTarget.texture = swapchainTexture;
@@ -849,22 +982,53 @@ void render(SDL_GPUDevice* renderer, SDL_Window* window){
         depthTarget.store_op = SDL_GPU_STOREOP_DONT_CARE; 
         depthTarget.stencil_load_op = SDL_GPU_LOADOP_DONT_CARE;
         depthTarget.stencil_store_op = SDL_GPU_STOREOP_DONT_CARE;
-
-
-        SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmd, &colorTarget, 1, &depthTarget);
-
-        SDL_GPUBufferBinding UIVBinding = { .buffer = UIVBuf, .offset = 0 };
-        SDL_GPUBufferBinding UIIBinding = { .buffer = UIIBuf, .offset = 0 };
-
-        SDL_GPUBufferBinding textVBinding = { .buffer = textVBuf, .offset = 0 };
-        SDL_GPUBufferBinding textIBinding = { .buffer = textIBuf, .offset = 0 };
         
-        SDL_PushGPUVertexUniformData(cmd, 0, &myData, sizeof(myData));
-        for (const auto& r : renderLayers){if(r) r->draw(renderPass);}
 
-        SDL_EndGPURenderPass(renderPass);
+        SDL_GPUColorTargetInfo canvasTarget{};
+        canvasTarget.texture = virtualCanvas;
+        canvasTarget.clear_color = {0.0f, 0.0f, 0.0f, 1.0f};
+        canvasTarget.load_op = SDL_GPU_LOADOP_CLEAR;
+        canvasTarget.store_op = SDL_GPU_STOREOP_STORE;
+
+        SDL_GPUDepthStencilTargetInfo canvasDepth = {};
+        canvasDepth.texture = virtualCanvasDepth;
+        canvasDepth.clear_depth = 1.0f;
+        canvasDepth.load_op = SDL_GPU_LOADOP_CLEAR;
+        canvasDepth.store_op = SDL_GPU_STOREOP_DONT_CARE;
+        canvasDepth.stencil_load_op = SDL_GPU_LOADOP_DONT_CARE;
+        canvasDepth.stencil_store_op = SDL_GPU_STOREOP_DONT_CARE;
+
+        SDL_GPURenderPass* worldPass = SDL_BeginGPURenderPass(cmd, &canvasTarget, 1, &canvasDepth);
+        SDL_PushGPUVertexUniformData(cmd, 0, &myData, sizeof(myData));
+        for (const auto& r : renderLayers){ if(r) r->draw(worldPass); }
+        SDL_EndGPURenderPass(worldPass);
+
+        SDL_GPUColorTargetInfo blitTarget{};
+        blitTarget.texture = swapchainTexture;
+        blitTarget.clear_color = {0,0,0,1};
+        blitTarget.load_op = SDL_GPU_LOADOP_CLEAR;
+        blitTarget.store_op = SDL_GPU_STOREOP_STORE;
+        SDL_GPURenderPass* blitPass = SDL_BeginGPURenderPass(cmd, &blitTarget, 1, NULL);
+        SDL_BindGPUGraphicsPipeline(blitPass, virtualCanvasPipeline);
+        SDL_GPUTextureSamplerBinding cb = { virtualCanvas, virtualCanvasSampler };
+        SDL_BindGPUFragmentSamplers(blitPass, 0, &cb, 1);
+        SDL_GPUBufferBinding vBind = { .buffer = canvasQuadVBuf, .offset = 0 };
+        SDL_GPUBufferBinding iBind = { .buffer = canvasQuadIBuf, .offset = 0 };
+        SDL_BindGPUVertexBuffers(blitPass, 0, &vBind, 1);
+        SDL_BindGPUIndexBuffer(blitPass, &iBind, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+        SDL_DrawGPUIndexedPrimitives(blitPass, 6, 1, 0, 0, 0);
+        SDL_EndGPURenderPass(blitPass);
 
         if(UITexture->texture != NULL && UITexture->sampler != NULL){
+
+            SDL_GPUBufferBinding UIVBinding = { .buffer = UIVBuf, .offset = 0 };
+            SDL_GPUBufferBinding UIIBinding = { .buffer = UIIBuf, .offset = 0 };
+
+            SDL_GPUBufferBinding textVBinding = { .buffer = textVBuf, .offset = 0 };
+            SDL_GPUBufferBinding textIBinding = { .buffer = textIBuf, .offset = 0 };
+            
+            SDL_PushGPUVertexUniformData(cmd, 0, &myData, sizeof(myData));
+
             colorTarget.load_op = SDL_GPU_LOADOP_LOAD;
             SDL_GPURenderPass* uiPass = SDL_BeginGPURenderPass(cmd, &colorTarget, 1, NULL);
             SDL_BindGPUGraphicsPipeline(uiPass, UIPipeline);
@@ -918,6 +1082,9 @@ SDL_GPUDevice* createRenderer(SDL_Window* window){
     createParticlePipeline(renderer, window);
     createEntityPipeline(renderer, window);
     createLightMapTexture(renderer);
+    createCanvasPipeline(renderer, window);
+    createVirtualCanvas(renderer, window, ZOOM_LEVELS[CAM_ZOOM].x, ZOOM_LEVELS[CAM_ZOOM].y);
+    updateCanvasQuad(renderer);
     loadUnitSheet("src/assets/unit_sprites/base_idle.png");
 
     loadUISpriteSheet(renderer, "src/assets/ui.png");

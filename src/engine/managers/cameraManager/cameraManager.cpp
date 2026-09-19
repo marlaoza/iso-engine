@@ -4,10 +4,14 @@
 #include "managers/inputManager/inputManager.h"
 
 #include "constants.h"
+#include <cmath>
 
 SDL_FPoint CAM_POS = {0, 0};
 float CAM_SPEED = CAM_MIN_SPEED;
-float CAM_ZOOM = 1.0f;
+
+int CAM_ZOOM = 0;
+
+bool dirtyCanvas = false;
 
 void moveCamera(){
 
@@ -21,10 +25,15 @@ void moveCamera(){
         CAM_SPEED =  CAM_MIN_SPEED;
     }
     
+    CAM_POS = { floorf(CAM_POS.x), floorf(CAM_POS.y) };
+    
 }
 
 void zoomCamera(float amount){
-    CAM_ZOOM += (amount * 0.05f);
+    if(amount > 0)CAM_ZOOM += 1;
+    else CAM_ZOOM -= 1;
+
     if(CAM_ZOOM > CAM_MAX_ZOOM) CAM_ZOOM = CAM_MAX_ZOOM;
-    if(CAM_ZOOM < CAM_MIN_ZOOM) CAM_ZOOM = CAM_MIN_ZOOM;
+    if(CAM_ZOOM < 0) CAM_ZOOM = 0;
+    dirtyCanvas = true;
 }

@@ -11,7 +11,6 @@ void sortLightmap(SDL_GPUDevice* renderer){
 
     for (const LightSource& L : lights){
         for (Node n : floodLight(L.gridPos, L.radius)){
-            SDL_Log("%d", n.cost);
             float falloff = 1.0f - (float)n.cost / (float)L.radius;
             int idx = n.pos.y * BOARD_WIDTH + n.pos.x;
             float contribution = falloff * L.intensity;
@@ -27,7 +26,6 @@ void sortLightmap(SDL_GPUDevice* renderer){
 }
 
 void uploadLightmap(SDL_GPUDevice* renderer){
-    SDL_Log("lightmapTexture ptr: %p", (void*)lightmapTexture);
     size_t dataSize = BOARD_WIDTH * BOARD_HEIGHT * sizeof(SDL_FColor);
 
     SDL_GPUTransferBufferCreateInfo tbufInfo = { .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = (Uint32)dataSize };

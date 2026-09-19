@@ -12,6 +12,8 @@ cbuffer SceneData : register(b0) {
     int selectedY;
     int boardWidth;
     int boardHeight;
+    int canvasWidth;
+    int canvasHeight;
 };
 
 struct VSInput {
@@ -40,19 +42,17 @@ struct VSOutput {
 VSOutput main(VSInput input) {
     VSOutput output;
 
-    float2 resolution = float2(windowWidth, windowHeight);
-
     float2 normPos = input.pos;
     float2 normCam = float2(camX, camY);
     
-    float2 p = (normPos - normCam) * camZoom;
+    float2 p = (normPos - normCam);
     int mapSize = boardWidth + boardHeight;
     float index = input.gridPos.x + input.gridPos.y;
     float depth = (index / (float)mapSize) + 0.005;
 
-    output.pos = float4((p.x / resolution.x) * 2.0 - 1.0, 
-                        (p.y / resolution.y) * -2.0 + 1.0, 
-                        1.0 - depth, 1.0);
+    output.pos = float4((p.x / canvasWidth) * 2.0 - 1.0,
+                    (p.y / canvasHeight) * -2.0 + 1.0,
+                    1.0 - depth, 1.0);
 
     output.texIndex = input.texIndex;
     output.frameSize = input.frameSize;

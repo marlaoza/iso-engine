@@ -131,10 +131,15 @@ extern SDL_GPUBuffer* textVBuf;
 extern SDL_GPUBuffer* textIBuf;
 extern int TextIndexSize;
 
+extern SDL_GPUBuffer* canvasQuadVBuf;
+extern SDL_GPUBuffer* canvasQuadIBuf;
+
 void render(SDL_GPUDevice* renderer, SDL_Window* window);
 SDL_GPUDevice* createRenderer(SDL_Window* window);
 void destroyRenderer(SDL_GPUDevice* renderer);
 
+void updateCanvasQuad(SDL_GPUDevice* renderer);
+void createVirtualCanvas(SDL_GPUDevice* renderer, SDL_Window* window, int w, int h);
 
 extern int unitSheetCount;
 

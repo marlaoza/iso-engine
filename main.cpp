@@ -285,6 +285,15 @@ int main(int argc, char *argv[]){
         .color = {1.0f, 0.5f, 0.3f, 1.0f}
     };
     lights.push_back(l);
+
+    LightSource l2 = {
+        .gridPos = {6,6},
+        .height = 1,
+        .radius = 5,
+        .intensity = 1.0,
+        .color = {0.7f, 1.0f, 0.3f, 1.0f}
+    };
+    lights.push_back(l2);
     dirtyLights = true;
      SDL_Log("light ok");
 
@@ -360,6 +369,11 @@ int main(int argc, char *argv[]){
 
         for (Particle* p : particles){p->update();}
 
+        if(dirtyCanvas){
+            createVirtualCanvas(renderer, window, ZOOM_LEVELS[CAM_ZOOM].x, ZOOM_LEVELS[CAM_ZOOM].y);
+            updateCanvasQuad(renderer);
+            dirtyCanvas = false;
+        }
         if(dirtyMap)sortTilePoints(renderer);
         if(dirtyUnits)sortUnits(renderer);
         if(dirtyLights)sortLightmap(renderer);

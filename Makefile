@@ -5,7 +5,7 @@ ENGINE = src/engine/map/map.cpp src/engine/geometry/geometry.cpp src/engine/rend
 
 INCLUDES = -I src -I src/engine -I src/include/ -I src/include/sdl3
 
-SHADERS = entity highlight particle tile ui
+SHADERS = entity highlight particle tile ui canvas
 
 all: shaders
 	g++ $(INCLUDES) -L src/lib -o main main.cpp $(MANAGERS) $(ENTITIES) $(EFFECTS) $(ENGINE) -lmingw32 -lSDL3 -lSDL3_ttf -static-libgcc -static-libstdc++

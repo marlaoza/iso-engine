@@ -1,3 +1,22 @@
+[[vk::binding(0, 3)]]
+cbuffer SceneData : register(b0) {
+    float windowWidth;
+    float windowHeight;
+    float mouseX;
+    float mouseY;
+    float camX;
+    float camY;
+    float camZoom;
+    float frameTime;
+    int selectedX;
+    int selectedY;
+    int boardWidth;
+    int boardHeight;
+    int canvasWidth;
+    int canvasHeight;
+};
+
+
 [[vk::binding(0, 2)]]
 Texture2DArray unitTextures : register(t0);
 [[vk::binding(0, 2)]]
@@ -18,6 +37,11 @@ struct PSInput {
     nointerpolation float2 gridPos : TEXCOORD5; 
 };
 
+float3 posterize(float3 color, float levels){
+    float3 c = clamp(color * levels, 0.0, levels - 1.0);
+    return floor(c) / (levels - 1.0);
+}
+
 float4 main(PSInput input) : SV_Target {
     int2 pixelCoords = int2(
         (input.direction * input.frameSize.x) + (input.uv.x * (input.frameSize.x - 0.001)),
@@ -30,6 +54,7 @@ float4 main(PSInput input) : SV_Target {
     if (texColor.a < 0.1) {discard;}
 
     float4 lightColor = lightmapTex.Sample(lightmapSampler, input.gridPos);
+    lightColor.rgb = posterize(lightColor.rgb, 12.0);
     texColor.rgb *= lightColor.rgb;
 
     return texColor;

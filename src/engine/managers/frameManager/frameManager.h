@@ -32,6 +32,8 @@ struct SceneUniforms {
     int selectedY;
     int boardWidth;
     int boardHeight;
+    int canvasWidth;
+    int canvasHeight;
 };
 
 struct MapCell {

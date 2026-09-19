@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SDL_rect.h"
+
 #define MIN_WIDTH 640
 #define MIN_HEIGHT 360
 
@@ -7,8 +9,7 @@
 #define CAM_SPEED_INCREMENT 100.0f
 #define CAM_MAX_SPEED 300.0f
 
-#define CAM_MAX_ZOOM 5.0f
-#define CAM_MIN_ZOOM 1.0f
+#define CAM_MAX_ZOOM 2
 
 #define TILE_SIZE 18
 
@@ -21,3 +22,8 @@
 
 #define MAX_HL_LAYERS 6
 
+const SDL_Point ZOOM_LEVELS[] = {
+    {960, 540}, 
+    {640, 360}, 
+    {320, 180}, 
+};

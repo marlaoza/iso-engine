@@ -12,6 +12,8 @@ cbuffer SceneData : register(b0) {
     int selectedY;
     int boardWidth;
     int boardHeight;
+    int canvasWidth;
+    int canvasHeight;
 };
 
 struct VSInput {
